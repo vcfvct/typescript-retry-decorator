@@ -1,0 +1,31 @@
+{
+  "name": "typescript-retry-decorator",
+  "version": "1.0.0",
+  "description": "A simple retry decorator for typescript with no dependency.",
+  "main": "src/index.ts",
+  "typings": "src/index.ts",
+  "scripts": {
+    "test": "ts-node src/example.ts",
+    "gen-types": "tsc --declaration src/index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vcfvct/typescript-retry-decorator.git"
+  },
+  "keywords": [
+    "typescirpt",
+    "decorator",
+    "retry"
+  ],
+  "author": "Han Li",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/vcfvct/typescript-retry-decorator/issues"
+  },
+  "homepage": "https://github.com/vcfvct/typescript-retry-decorator#readme",
+  "devDependencies": {
+    "@types/node": "^10.12.10",
+    "ts-node": "^7.0.1",
+    "typescript": "^3.1.6"
+  }
+}
