@@ -1,3 +1,4 @@
+![Retry](https://cdn.iconscout.com/icon/free/png-256/retry-1-386755.png)
 ## A simple retry decorator for typescript with 0 dependency.
 Import and use it. Retry for `Promise` is also supported.
 
@@ -20,9 +21,18 @@ class RetryExample {
 
 (async () => {
   try {
-    await RetryExpample.functionToRetry();
+    await RetryExample.functionToRetry();
   } catch (e) {
     console.info(`All retry done as expected, final message: '${e.message}'`);
   }
 })()
+```
+
+output:
+```
+Calling functionToRetry for the 1 time
+Calling functionToRetry for the 2 time
+Calling functionToRetry for the 3 time
+Calling functionToRetry for the 4 time
+All retry done as expected, final message: 'Failed for 'functionToRetry' for 3 times.'
 ```
