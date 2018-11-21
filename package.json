@@ -1,12 +1,12 @@
 {
   "name": "typescript-retry-decorator",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A simple retry decorator for typescript with no dependency.",
-  "main": "src/index.ts",
-  "typings": "src/index.ts",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
   "scripts": {
     "test": "ts-node src/example.ts",
-    "gen-types": "tsc --declaration src/index.ts"
+    "build": "tsc -d -p ."
   },
   "repository": {
     "type": "git",
