@@ -1,1 +1,1 @@
-export { Retry } from './retry.decorator';
+export { Retryable, RetryOptions, BackOffPolicy } from './retry.decorator';
