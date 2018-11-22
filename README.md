@@ -1,6 +1,7 @@
 ![Retry](https://cdn.iconscout.com/icon/free/png-256/retry-1-386755.png)
 ## A simple retry decorator for typescript with 0 dependency.
 This is inspired by the [Spring-Retry project](https://github.com/spring-projects/spring-retry).
+
 Import and use it. Retry for `Promise` is also supported.
 
 ### Install
@@ -77,21 +78,21 @@ function resetCount() {
 
 Run the above code with `ts-node`, output will be:
 ```
-Calling noDelayRetry for the 1 time at 00:21:32
-Calling noDelayRetry for the 2 time at 00:21:32
-Calling noDelayRetry for the 3 time at 00:21:32
-Calling noDelayRetry for the 4 time at 00:21:32
+Calling noDelayRetry for the 1 time at 00:27:37
+Calling noDelayRetry for the 2 time at 00:27:37
+Calling noDelayRetry for the 3 time at 00:27:37
+Calling noDelayRetry for the 4 time at 00:27:37
 All retry done as expected, final message: 'Failed for 'noDelayRetry' for 3 times.'
 
-Calling fixedBackOffRetry 1s for the 1 time at 00:21:32
-Calling fixedBackOffRetry 1s for the 2 time at 00:21:33
-Calling fixedBackOffRetry 1s for the 3 time at 00:21:34
-Calling fixedBackOffRetry 1s for the 4 time at 00:21:35
+Calling fixedBackOffRetry 1s for the 1 time at 00:27:37
+Calling fixedBackOffRetry 1s for the 2 time at 00:27:38
+Calling fixedBackOffRetry 1s for the 3 time at 00:27:39
+Calling fixedBackOffRetry 1s for the 4 time at 00:27:40
 All retry done as expected, final message: 'Failed for 'fixedBackOffRetry' for 3 times.'
 
-Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 1 time at 00:21:35
-Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 2 time at 00:21:36
-Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 3 time at 00:21:39
-Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 4 time at 00:21:43
+Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 1 time at 00:27:40
+Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 2 time at 00:27:41
+Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 3 time at 00:27:44
+Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 4 time at 00:27:48
 All retry done as expected, final message: 'Failed for 'ExponentialBackOffRetry' for 3 times.'
 ```
