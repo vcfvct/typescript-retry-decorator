@@ -15,7 +15,7 @@ Import and use it. Retry for `Promise` is also supported.
 | exponentialOption | object | No        | { maxInterval: 2000,    multiplier: 2 } | This is for the `ExponentialBackOffPolicy` <br/> The max interval each wait and the multiplier for the `backOff`. |
 
 ### Example
-```
+```typescript
 import { Retryable, BackOffPolicy } from 'typescript-retry-decorator';
 
 let count: number = 1;
@@ -77,21 +77,21 @@ function resetCount() {
 
 Run the above code with `ts-node`, output will be:
 ```
-Calling noDelayRetry for the 1 time at 23:47:13
-Calling noDelayRetry for the 2 time at 23:47:13
-Calling noDelayRetry for the 3 time at 23:47:13
-Calling noDelayRetry for the 4 time at 23:47:13
+Calling noDelayRetry for the 1 time at 00:21:32
+Calling noDelayRetry for the 2 time at 00:21:32
+Calling noDelayRetry for the 3 time at 00:21:32
+Calling noDelayRetry for the 4 time at 00:21:32
 All retry done as expected, final message: 'Failed for 'noDelayRetry' for 3 times.'
 
-Calling fixedBackOffRetry for the 1 time at 23:47:13
-Calling fixedBackOffRetry for the 2 time at 23:47:14
-Calling fixedBackOffRetry for the 3 time at 23:47:15
-Calling fixedBackOffRetry for the 4 time at 23:47:16
+Calling fixedBackOffRetry 1s for the 1 time at 00:21:32
+Calling fixedBackOffRetry 1s for the 2 time at 00:21:33
+Calling fixedBackOffRetry 1s for the 3 time at 00:21:34
+Calling fixedBackOffRetry 1s for the 4 time at 00:21:35
 All retry done as expected, final message: 'Failed for 'fixedBackOffRetry' for 3 times.'
 
-Calling ExponentialBackOffRetry for the 1 time at 23:47:16
-Calling ExponentialBackOffRetry for the 2 time at 23:47:17
-Calling ExponentialBackOffRetry for the 3 time at 23:47:20
-Calling ExponentialBackOffRetry for the 4 time at 23:47:24
+Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 1 time at 00:21:35
+Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 2 time at 00:21:36
+Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 3 time at 00:21:39
+Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 4 time at 00:21:43
 All retry done as expected, final message: 'Failed for 'ExponentialBackOffRetry' for 3 times.'
 ```
