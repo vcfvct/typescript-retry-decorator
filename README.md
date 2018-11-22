@@ -26,6 +26,7 @@ class RetryExample {
     console.info(`Calling noDelayRetry for the ${count++} time at ${new Date().toLocaleTimeString()}`);
     throw new Error('I failed!');
   }
+
   @Retryable({
     maxAttempts: 3,
     backOffPolicy: BackOffPolicy.FixedBackOffPolicy,
@@ -35,6 +36,7 @@ class RetryExample {
     console.info(`Calling fixedBackOffRetry 1s for the ${count++} time at ${new Date().toLocaleTimeString()}`);
     throw new Error('I failed!');
   }
+
   @Retryable({
     maxAttempts: 3,
     backOffPolicy: BackOffPolicy.ExponentialBackOffPolicy,
