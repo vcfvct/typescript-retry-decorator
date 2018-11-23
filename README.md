@@ -1,8 +1,8 @@
 ![Retry](https://cdn.iconscout.com/icon/free/png-256/retry-1-386755.png)
-## A simple Nodejs retry decorator for typescript with 0 dependency.
+## A simple retry decorator for typescript with 0 dependency.
 This is inspired by the [Spring-Retry project](https://github.com/spring-projects/spring-retry).
 
-Import and use it for `Node 8+`. Retry for `Promise` is also supported.
+Import and use it. Retry for `Promise` is supported as long as the `runtime` has promise(nodejs/evergreen-browser).
 
 ### Install
 > npm install typescript-retry-decorator
