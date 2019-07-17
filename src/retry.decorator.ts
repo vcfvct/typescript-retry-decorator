@@ -45,7 +45,7 @@ export function Retryable(options: RetryOptions): Function {
     } catch (e) {
       if (--maxAttempts < 0) {
         throw new Error("maxAttempts");
-      } else if (!doRetry(e)) {
+      } else if (doRetry && !doRetry(e)) {
         throw e;
       }
       backOff && (await sleep(backOff));
