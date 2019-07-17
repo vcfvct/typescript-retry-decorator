@@ -29,6 +29,18 @@ class RetryExample {
     throw new Error('I failed!');
   }
 
+  @Retryable({ 
+    maxAttempts: 3,
+    backOff: 1000,
+    doRetry: (e: Error) => {
+      return e.message === 'Error: 429';
+    }
+   })
+  static async doRetryDecision() {
+    console.info(`Calling noDelayRetry for the ${count++} time at ${new Date().toLocaleTimeString()}`);
+    throw new Error('Error: 429');
+  }
+
   @Retryable({
     maxAttempts: 3,
     backOffPolicy: BackOffPolicy.FixedBackOffPolicy,
@@ -55,6 +67,12 @@ class RetryExample {
   try {
     resetCount();
     await RetryExample.noDelayRetry();
+  } catch (e) {
+    console.info(`All retry done as expected, final message: '${e.message}'`);
+  }
+  try {
+    resetCount();
+    await RetryExample.doRetryDecision();
   } catch (e) {
     console.info(`All retry done as expected, final message: '${e.message}'`);
   }
