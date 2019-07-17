@@ -8,6 +8,7 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "sourceMap": true,
+    "skipLibCheck": true,
     "lib": [
       "es2017",
       "esnext.asynciterable",
@@ -22,5 +23,9 @@
   },
   "include": [
     "src/**/*",
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
   ]
 }
