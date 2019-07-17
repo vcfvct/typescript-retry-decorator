@@ -1,4 +1,4 @@
-import { throwError, sleep } from "./utils";
+import { sleep } from "./utils";
 
 /**
  * retry decorator which is nothing but a high order function wrapper
