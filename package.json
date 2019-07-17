@@ -7,7 +7,7 @@
   "scripts": {
     "test": "ts-node src/example.ts",
     "build": "tsc -d -p .",
-    "postinstall": "tsc -p ."
+    "postinstall": "tsc -p tsconfig.prod.json"
   },
   "repository": {
     "type": "git",
