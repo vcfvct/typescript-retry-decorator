@@ -24,7 +24,7 @@
     "url": "https://github.com/vcfvct/typescript-retry-decorator/issues"
   },
   "homepage": "https://github.com/vcfvct/typescript-retry-decorator#readme",
-  "devDependencies": {
+  "dependencies": {
     "@types/node": "^10.12.10",
     "ts-node": "^7.0.1",
     "typescript": "^3.5.3"
