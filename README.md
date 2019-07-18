@@ -18,7 +18,7 @@ Import and use it. Retry for `Promise` is supported as long as the `runtime` has
 
 ### Example
 ```typescript
-import { Retryable, BackOffPolicy } from './retry.decorator';
+import { Retryable, BackOffPolicy } from 'typescript-retry-decorator';
 
 let count: number = 1;
 
