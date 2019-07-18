@@ -8,6 +8,31 @@ class RetryExample {
     console.info(`Calling noDelayRetry for the ${count++} time at ${new Date().toLocaleTimeString()}`);
     throw new Error('I failed!');
   }
+
+  @Retryable({ 
+    maxAttempts: 3,
+    backOff: 1000,
+    doRetry: (e: Error) => {
+      return e.message === 'Error: 429';
+    }
+   })
+  static async doRetry() {
+    console.info(`Calling doRetry for the ${count++} time at ${new Date().toLocaleTimeString()}`);
+    throw new Error('Error: 429');
+  }
+
+  @Retryable({ 
+    maxAttempts: 3,
+    backOff: 1000,
+    doRetry: (e: Error) => {
+      return e.message === 'Error: 429';
+    }
+   })
+  static async doNotRetry() {
+    console.info(`Calling doNotRetry for the ${count++} time at ${new Date().toLocaleTimeString()}`);
+    throw new Error('Error: 404');
+  }
+
   @Retryable({
     maxAttempts: 3,
     backOffPolicy: BackOffPolicy.FixedBackOffPolicy,
@@ -17,6 +42,7 @@ class RetryExample {
     console.info(`Calling fixedBackOffRetry 1s for the ${count++} time at ${new Date().toLocaleTimeString()}`);
     throw new Error('I failed!');
   }
+
   @Retryable({
     maxAttempts: 3,
     backOffPolicy: BackOffPolicy.ExponentialBackOffPolicy,
@@ -36,18 +62,35 @@ class RetryExample {
   } catch (e) {
     console.info(`All retry done as expected, final message: '${e.message}'`);
   }
+
+  try {
+    resetCount();
+    await RetryExample.doRetry();
+  } catch (e) {
+    console.info(`All retry done as expected, final message: '${e.message}'`);
+  }
+
+  try {
+    resetCount();
+    await RetryExample.doNotRetry();
+  } catch (e) {
+    console.info(`All retry done as expected, final message: '${e.message}'`);
+  }
+
   try {
     resetCount();
     await RetryExample.fixedBackOffRetry();
   } catch (e) {
     console.info(`All retry done as expected, final message: '${e.message}'`);
   }
+
   try {
     resetCount();
     await RetryExample.ExponentialBackOffRetry();
   } catch (e) {
     console.info(`All retry done as expected, final message: '${e.message}'`);
   }
+  
 })();
 
 function resetCount() {

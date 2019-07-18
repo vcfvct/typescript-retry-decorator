@@ -1,12 +1,13 @@
 {
   "name": "typescript-retry-decorator",
-  "version": "1.0.5",
+  "version": "1.1.16",
   "description": "A simple retry decorator for typescript with no dependency.",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "scripts": {
     "test": "ts-node src/example.ts",
-    "build": "tsc -d -p ."
+    "build": "tsc -d -p .",
+    "postinstall": "tsc -d -p ."
   },
   "repository": {
     "type": "git",
@@ -23,9 +24,9 @@
     "url": "https://github.com/vcfvct/typescript-retry-decorator/issues"
   },
   "homepage": "https://github.com/vcfvct/typescript-retry-decorator#readme",
-  "devDependencies": {
+  "dependencies": {
     "@types/node": "^10.12.10",
     "ts-node": "^7.0.1",
-    "typescript": "^3.1.6"
+    "typescript": "^3.5.3"
   }
 }

@@ -3,10 +3,12 @@
     "module": "commonjs",
     "target": "ES5",
     "noImplicitAny": true,
+    "declaration": true,
     "moduleResolution": "node",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "sourceMap": true,
+    "skipLibCheck": true,
     "lib": [
       "es2017",
       "esnext.asynciterable",
@@ -20,6 +22,10 @@
     }
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
   ]
 }

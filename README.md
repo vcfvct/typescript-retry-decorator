@@ -14,10 +14,11 @@ Import and use it. Retry for `Promise` is supported as long as the `runtime` has
 |      backOff      | number |     No    |                    0                    |                               number in `ms` to back off.  If not set, then no wait                               |
 |   backOffPolicy   |  enum  |     No    |            FixedBackOffPolicy           |                                            can be fixed or exponential                                            |
 | exponentialOption | object | No        | { maxInterval: 2000,    multiplier: 2 } | This is for the `ExponentialBackOffPolicy` <br/> The max interval each wait and the multiplier for the `backOff`. |
+| doRetry | (e: any) => boolean | No        | - | Function with error parameter to decide if repetition is necessary. |
 
 ### Example
 ```typescript
-import { Retryable, BackOffPolicy } from 'typescript-retry-decorator';
+import { Retryable, BackOffPolicy } from './retry.decorator';
 
 let count: number = 1;
 
@@ -26,6 +27,30 @@ class RetryExample {
   static async noDelayRetry() {
     console.info(`Calling noDelayRetry for the ${count++} time at ${new Date().toLocaleTimeString()}`);
     throw new Error('I failed!');
+  }
+
+  @Retryable({ 
+    maxAttempts: 3,
+    backOff: 1000,
+    doRetry: (e: Error) => {
+      return e.message === 'Error: 429';
+    }
+   })
+  static async doRetry() {
+    console.info(`Calling doRetry for the ${count++} time at ${new Date().toLocaleTimeString()}`);
+    throw new Error('Error: 429');
+  }
+
+  @Retryable({ 
+    maxAttempts: 3,
+    backOff: 1000,
+    doRetry: (e: Error) => {
+      return e.message === 'Error: 429';
+    }
+   })
+  static async doNotRetry() {
+    console.info(`Calling doNotRetry for the ${count++} time at ${new Date().toLocaleTimeString()}`);
+    throw new Error('Error: 404');
   }
 
   @Retryable({
@@ -57,18 +82,35 @@ class RetryExample {
   } catch (e) {
     console.info(`All retry done as expected, final message: '${e.message}'`);
   }
+
+  try {
+    resetCount();
+    await RetryExample.doRetry();
+  } catch (e) {
+    console.info(`All retry done as expected, final message: '${e.message}'`);
+  }
+
+  try {
+    resetCount();
+    await RetryExample.doNotRetry();
+  } catch (e) {
+    console.info(`All retry done as expected, final message: '${e.message}'`);
+  }
+
   try {
     resetCount();
     await RetryExample.fixedBackOffRetry();
   } catch (e) {
     console.info(`All retry done as expected, final message: '${e.message}'`);
   }
+
   try {
     resetCount();
     await RetryExample.ExponentialBackOffRetry();
   } catch (e) {
     console.info(`All retry done as expected, final message: '${e.message}'`);
   }
+  
 })();
 
 function resetCount() {
@@ -78,21 +120,30 @@ function resetCount() {
 
 Run the above code with `ts-node`, output will be:
 ```
-Calling noDelayRetry for the 1 time at 00:27:37
-Calling noDelayRetry for the 2 time at 00:27:37
-Calling noDelayRetry for the 3 time at 00:27:37
-Calling noDelayRetry for the 4 time at 00:27:37
+Calling noDelayRetry for the 1 time at 10:01:53 PM
+Calling noDelayRetry for the 2 time at 10:01:53 PM
+Calling noDelayRetry for the 3 time at 10:01:53 PM
+Calling noDelayRetry for the 4 time at 10:01:53 PM
 All retry done as expected, final message: 'Failed for 'noDelayRetry' for 3 times.'
 
-Calling fixedBackOffRetry 1s for the 1 time at 00:27:37
-Calling fixedBackOffRetry 1s for the 2 time at 00:27:38
-Calling fixedBackOffRetry 1s for the 3 time at 00:27:39
-Calling fixedBackOffRetry 1s for the 4 time at 00:27:40
+Calling doRetry for the 1 time at 10:01:53 PM
+Calling doRetry for the 2 time at 10:01:54 PM
+Calling doRetry for the 3 time at 10:01:55 PM
+Calling doRetry for the 4 time at 10:01:56 PM
+All retry done as expected, final message: 'Failed for 'doRetry' for 3 times.'
+
+Calling doNotRetry for the 1 time at 10:01:56 PM
+All retry done as expected, final message: 'Error: 404'
+
+Calling fixedBackOffRetry 1s for the 1 time at 10:01:56 PM
+Calling fixedBackOffRetry 1s for the 2 time at 10:01:57 PM
+Calling fixedBackOffRetry 1s for the 3 time at 10:01:58 PM
+Calling fixedBackOffRetry 1s for the 4 time at 10:01:59 PM
 All retry done as expected, final message: 'Failed for 'fixedBackOffRetry' for 3 times.'
 
-Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 1 time at 00:27:40
-Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 2 time at 00:27:41
-Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 3 time at 00:27:44
-Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 4 time at 00:27:48
+Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 1 time at 10:01:59 PM
+Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 2 time at 10:02:00 PM
+Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 3 time at 10:02:03 PM
+Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 4 time at 10:02:07 PM
 All retry done as expected, final message: 'Failed for 'ExponentialBackOffRetry' for 3 times.'
 ```
