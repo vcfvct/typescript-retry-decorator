@@ -6,8 +6,8 @@
   "typings": "dist/index.d.ts",
   "scripts": {
     "test": "ts-node src/example.ts",
-    "build": "tsc",
-    "postinstall": "tsc"
+    "build": "tsc -d -p .",
+    "postinstall": "npm build"
   },
   "repository": {
     "type": "git",
