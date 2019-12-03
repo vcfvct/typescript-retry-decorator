@@ -1,34 +1,34 @@
 import { Retryable, BackOffPolicy } from './retry.decorator';
 
-let count: number = 1;
+let count = 1;
 
 class RetryExample {
   @Retryable({ maxAttempts: 3 })
-  static async noDelayRetry() {
+  static async noDelayRetry(): Promise<void> {
     console.info(`Calling noDelayRetry for the ${count++} time at ${new Date().toLocaleTimeString()}`);
     throw new Error('I failed!');
   }
 
-  @Retryable({ 
+  @Retryable({
     maxAttempts: 3,
     backOff: 1000,
     doRetry: (e: Error) => {
       return e.message === 'Error: 429';
-    }
-   })
-  static async doRetry() {
+    },
+  })
+  static async doRetry(): Promise<void> {
     console.info(`Calling doRetry for the ${count++} time at ${new Date().toLocaleTimeString()}`);
     throw new Error('Error: 429');
   }
 
-  @Retryable({ 
+  @Retryable({
     maxAttempts: 3,
     backOff: 1000,
     doRetry: (e: Error) => {
       return e.message === 'Error: 429';
-    }
-   })
-  static async doNotRetry() {
+    },
+  })
+  static async doNotRetry(): Promise<void> {
     console.info(`Calling doNotRetry for the ${count++} time at ${new Date().toLocaleTimeString()}`);
     throw new Error('Error: 404');
   }
@@ -36,9 +36,9 @@ class RetryExample {
   @Retryable({
     maxAttempts: 3,
     backOffPolicy: BackOffPolicy.FixedBackOffPolicy,
-    backOff: 1000
+    backOff: 1000,
   })
-  static async fixedBackOffRetry() {
+  static async fixedBackOffRetry(): Promise<void> {
     console.info(`Calling fixedBackOffRetry 1s for the ${count++} time at ${new Date().toLocaleTimeString()}`);
     throw new Error('I failed!');
   }
@@ -47,9 +47,9 @@ class RetryExample {
     maxAttempts: 3,
     backOffPolicy: BackOffPolicy.ExponentialBackOffPolicy,
     backOff: 1000,
-    exponentialOption: { maxInterval: 4000, multiplier: 3 }
+    exponentialOption: { maxInterval: 4000, multiplier: 3 },
   })
-  static async ExponentialBackOffRetry() {
+  static async ExponentialBackOffRetry(): Promise<void> {
     console.info(`Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the ${count++} time at ${new Date().toLocaleTimeString()}`);
     throw new Error('I failed!');
   }
@@ -90,9 +90,9 @@ class RetryExample {
   } catch (e) {
     console.info(`All retry done as expected, final message: '${e.message}'`);
   }
-  
+
 })();
 
-function resetCount() {
+function resetCount(): void {
   count = 1;
 }
