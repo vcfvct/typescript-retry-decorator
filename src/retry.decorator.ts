@@ -1,4 +1,4 @@
-import { sleep } from "./utils";
+import { sleep } from './utils';
 
 /**
  * retry decorator which is nothing but a high order function wrapper
@@ -15,22 +15,22 @@ export function Retryable(options: RetryOptions): Function {
    * to the nature how arrow function defines this inside.
    *
    */
-  return function(target: Object, propertyKey: string, descriptor: TypedPropertyDescriptor<any>) {
+  return function(target: Record<string, any>, propertyKey: string, descriptor: TypedPropertyDescriptor<any>) {
     const originalFn: Function = descriptor.value;
     // set default value for ExponentialBackOffPolicy
     if (options.backOffPolicy === BackOffPolicy.ExponentialBackOffPolicy) {
       !options.backOff && (options.backOff = 1000);
       options.exponentialOption = {
         ...{ maxInterval: 2000, multiplier: 2 },
-        ...options.exponentialOption
+        ...options.exponentialOption,
       };
     }
     descriptor.value = async function(...args: any[]) {
       try {
         return await retryAsync.apply(this, [originalFn, args, options.maxAttempts, options.backOff, options.doRetry]);
       } catch (e) {
-        if (e.message === "maxAttempts") {
-          e.code = "429";
+        if (e.message === 'maxAttempts') {
+          e.code = '429';
           e.message = `Failed for '${propertyKey}' for ${options.maxAttempts} times.`;
         }
         throw e;
@@ -44,7 +44,8 @@ export function Retryable(options: RetryOptions): Function {
       return await fn.apply(this, args);
     } catch (e) {
       if (--maxAttempts < 0) {
-        throw new Error("maxAttempts");
+        console.error(e?.message);
+        throw new Error('maxAttempts');
       } else if (doRetry && !doRetry(e)) {
         throw e;
       }
@@ -67,6 +68,6 @@ export interface RetryOptions {
 }
 
 export enum BackOffPolicy {
-  FixedBackOffPolicy = "FixedBackOffPolicy",
-  ExponentialBackOffPolicy = "ExponentialBackOffPolicy"
+  FixedBackOffPolicy = 'FixedBackOffPolicy',
+  ExponentialBackOffPolicy = 'ExponentialBackOffPolicy'
 }
