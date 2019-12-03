@@ -118,7 +118,7 @@ function resetCount() {
 }
 ```
 
-Run the above code with `ts-node`, output will be:
+Run the above code with `ts-node`, then output will be:
 ```
 Calling noDelayRetry for the 1 time at 10:01:53 PM
 Calling noDelayRetry for the 2 time at 10:01:53 PM
