@@ -8,13 +8,14 @@ Import and use it. Retry for `Promise` is supported as long as the `runtime` has
 > npm install typescript-retry-decorator
 
 ### Options
-|    Option Name    |  Type  | Required? |                 Default                 |                                                    Description                                                    |
-|:-----------------:|:------:|:---------:|:---------------------------------------:|:-----------------------------------------------------------------------------------------------------------------:|
-|    maxAttempts    | number |    Yes    |                    -                    |                                              The max attempts to try                                              |
-|      backOff      | number |     No    |                    0                    |                               number in `ms` to back off.  If not set, then no wait                               |
-|   backOffPolicy   |  enum  |     No    |            FixedBackOffPolicy           |                                            can be fixed or exponential                                            |
-| exponentialOption | object | No        | { maxInterval: 2000,    multiplier: 2 } | This is for the `ExponentialBackOffPolicy` <br/> The max interval each wait and the multiplier for the `backOff`. |
-| doRetry | (e: any) => boolean | No        | - | Function with error parameter to decide if repetition is necessary. |
+| Option Name       | Type                  | Required? | Default                                 | Description                                                                                                       |
+|--:-:--------------|--:-:------------------|--:-:------|--:-:------------------------------------|--:-:--------------------------------------------------------------------------------------------------------------|
+| maxAttempts       | number                | Yes       | -                                       | The max attempts to try                                                                                           |
+| backOff           | number                | No        | 0                                       | number in `ms` to back off.  If not set, then no wait                                                             |
+| backOffPolicy     | enum                  | No        | FixedBackOffPolicy                      | can be fixed or exponential                                                                                       |
+| exponentialOption | object                | No        | { maxInterval: 2000,    multiplier: 2 } | This is for the `ExponentialBackOffPolicy` <br/> The max interval each wait and the multiplier for the `backOff`. |
+| doRetry           | (e: any) => boolean   | No        | -                                       | Function with error parameter to decide if repetition is necessary.                                               |
+| value             | Error/Exception class | No        | [] (any error/exception)                | Exception types that are retryable.                                                                               |
 
 ### Example
 ```typescript
@@ -27,6 +28,15 @@ class RetryExample {
   static async noDelayRetry() {
     console.info(`Calling noDelayRetry for the ${count++} time at ${new Date().toLocaleTimeString()}`);
     throw new Error('I failed!');
+  }
+
+  @Retryable({ 
+    maxAttempts: 3, 
+    value: [SyntaxError, ReferenceError]
+  })
+  static async noDelaySpecificRetry(): Promise<void> {
+    console.info(`Calling noDelaySpecificRetry for the ${count++} time at ${new Date().toLocaleTimeString()}`);
+    throw new SyntaxError('I failed with SyntaxError!');
   }
 
   @Retryable({ 
@@ -120,30 +130,36 @@ function resetCount() {
 
 Run the above code with `ts-node`, then output will be:
 ```
-Calling noDelayRetry for the 1 time at 10:01:53 PM
-Calling noDelayRetry for the 2 time at 10:01:53 PM
-Calling noDelayRetry for the 3 time at 10:01:53 PM
-Calling noDelayRetry for the 4 time at 10:01:53 PM
+Calling noDelayRetry for the 1 time at 4:12:49 PM
+Calling noDelayRetry for the 2 time at 4:12:49 PM
+Calling noDelayRetry for the 3 time at 4:12:49 PM
+Calling noDelayRetry for the 4 time at 4:12:49 PM
+I failed!
 All retry done as expected, final message: 'Failed for 'noDelayRetry' for 3 times.'
-
-Calling doRetry for the 1 time at 10:01:53 PM
-Calling doRetry for the 2 time at 10:01:54 PM
-Calling doRetry for the 3 time at 10:01:55 PM
-Calling doRetry for the 4 time at 10:01:56 PM
+Calling noDelayRetry for the 1 time at 4:12:49 PM
+Calling noDelayRetry for the 2 time at 4:12:49 PM
+Calling noDelayRetry for the 3 time at 4:12:49 PM
+Calling noDelayRetry for the 4 time at 4:12:49 PM
+I failed with SyntaxError!
+All retry done as expected, final message: 'Failed for 'noDelaySpecificRetry' for 3 times.'
+Calling doRetry for the 1 time at 4:12:49 PM
+Calling doRetry for the 2 time at 4:12:50 PM
+Calling doRetry for the 3 time at 4:12:51 PM
+Calling doRetry for the 4 time at 4:12:52 PM
+Error: 429
 All retry done as expected, final message: 'Failed for 'doRetry' for 3 times.'
-
-Calling doNotRetry for the 1 time at 10:01:56 PM
+Calling doNotRetry for the 1 time at 4:12:52 PM
 All retry done as expected, final message: 'Error: 404'
-
-Calling fixedBackOffRetry 1s for the 1 time at 10:01:56 PM
-Calling fixedBackOffRetry 1s for the 2 time at 10:01:57 PM
-Calling fixedBackOffRetry 1s for the 3 time at 10:01:58 PM
-Calling fixedBackOffRetry 1s for the 4 time at 10:01:59 PM
+Calling fixedBackOffRetry 1s for the 1 time at 4:12:52 PM
+Calling fixedBackOffRetry 1s for the 2 time at 4:12:53 PM
+Calling fixedBackOffRetry 1s for the 3 time at 4:12:54 PM
+Calling fixedBackOffRetry 1s for the 4 time at 4:12:55 PM
+I failed!
 All retry done as expected, final message: 'Failed for 'fixedBackOffRetry' for 3 times.'
-
-Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 1 time at 10:01:59 PM
-Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 2 time at 10:02:00 PM
-Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 3 time at 10:02:03 PM
-Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 4 time at 10:02:07 PM
+Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 1 time at 4:12:55 PM
+Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 2 time at 4:12:56 PM
+Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 3 time at 4:12:59 PM
+Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 4 time at 4:13:03 PM
+I failed!
 All retry done as expected, final message: 'Failed for 'ExponentialBackOffRetry' for 3 times.'
 ```
