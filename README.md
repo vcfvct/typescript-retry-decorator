@@ -9,13 +9,13 @@ Import and use it. Retry for `Promise` is supported as long as the `runtime` has
 
 ### Options
 | Option Name       | Type                  | Required? | Default                                 | Description                                                                                                       |
-|--:-:--------------|--:-:------------------|--:-:------|--:-:------------------------------------|--:-:--------------------------------------------------------------------------------------------------------------|
+|:-----------------:|:------:|:---------:|:---------------------------------------:|:--------------------------------------------------------------------------------------------------------------------------------:|
 | maxAttempts       | number                | Yes       | -                                       | The max attempts to try                                                                                           |
 | backOff           | number                | No        | 0                                       | number in `ms` to back off.  If not set, then no wait                                                             |
 | backOffPolicy     | enum                  | No        | FixedBackOffPolicy                      | can be fixed or exponential                                                                                       |
 | exponentialOption | object                | No        | { maxInterval: 2000,    multiplier: 2 } | This is for the `ExponentialBackOffPolicy` <br/> The max interval each wait and the multiplier for the `backOff`. |
 | doRetry           | (e: any) => boolean   | No        | -                                       | Function with error parameter to decide if repetition is necessary.                                               |
-| value             | Error/Exception class | No        | [] (any error/exception)                | Exception types that are retryable.                                                                               |
+| value             | Error/Exception class | No        | [ ]                                     | An array of Exception types that are retryable.                                                                   |
 
 ### Example
 ```typescript
