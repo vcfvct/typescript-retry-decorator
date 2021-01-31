@@ -1,6 +1,6 @@
 ![Retry](https://cdn.iconscout.com/icon/free/png-256/retry-1-386755.png)
 ## A simple retry decorator for typescript with 0 dependency.
-This is inspired by the [Spring-Retry project](https://github.com/spring-projects/spring-retry).
+This is inspired by the [Spring-Retry project](https://github.com/spring-projects/spring-retry). Written in Typescript, *100%* Test Coverage.
 
 Import and use it. Retry for `Promise` is supported as long as the `runtime` has promise(nodejs/evergreen-browser).
 
