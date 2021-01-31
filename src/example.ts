@@ -9,6 +9,12 @@ class RetryExample {
     throw new Error('I failed!');
   }
 
+  @Retryable({ maxAttempts: 3, value: [SyntaxError, ReferenceError] })
+  static async noDelaySpecificRetry(): Promise<void> {
+    console.info(`Calling noDelayRetry for the ${count++} time at ${new Date().toLocaleTimeString()}`);
+    throw new SyntaxError('I failed with SyntaxError!');
+  }
+
   @Retryable({
     maxAttempts: 3,
     backOff: 1000,
@@ -59,6 +65,13 @@ class RetryExample {
   try {
     resetCount();
     await RetryExample.noDelayRetry();
+  } catch (e) {
+    console.info(`All retry done as expected, final message: '${e.message}'`);
+  }
+
+  try {
+    resetCount();
+    await RetryExample.noDelaySpecificRetry();
   } catch (e) {
     console.info(`All retry done as expected, final message: '${e.message}'`);
   }

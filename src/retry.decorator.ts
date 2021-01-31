@@ -19,15 +19,11 @@ export function Retryable(options: RetryOptions): Function {
     const originalFn: Function = descriptor.value;
     // set default value for ExponentialBackOffPolicy
     if (options.backOffPolicy === BackOffPolicy.ExponentialBackOffPolicy) {
-      !options.backOff && (options.backOff = 1000);
-      options.exponentialOption = {
-        ...{ maxInterval: 2000, multiplier: 2 },
-        ...options.exponentialOption,
-      };
+      setExponentialBackOffPolicyDefault();
     }
     descriptor.value = async function(...args: any[]) {
       try {
-        return await retryAsync.apply(this, [originalFn, args, options.maxAttempts, options.backOff, options.doRetry]);
+        return await retryAsync.apply(this, [originalFn, args, options.maxAttempts, options.backOff]);
       } catch (e) {
         if (e.message === 'maxAttempts') {
           e.code = '429';
@@ -39,14 +35,15 @@ export function Retryable(options: RetryOptions): Function {
     return descriptor;
   };
 
-  async function retryAsync(fn: Function, args: any[], maxAttempts: number, backOff?: number, doRetry?: (e: any) => boolean): Promise<any> {
+  async function retryAsync(fn: Function, args: any[], maxAttempts: number, backOff?: number): Promise<any> {
     try {
       return await fn.apply(this, args);
     } catch (e) {
       if (--maxAttempts < 0) {
-        console.error(e?.message);
+        e?.message && console.error(e.message);
         throw new Error('maxAttempts');
-      } else if (doRetry && !doRetry(e)) {
+      }
+      if (!canRetry(e)) {
         throw e;
       }
       backOff && (await sleep(backOff));
@@ -54,8 +51,26 @@ export function Retryable(options: RetryOptions): Function {
         const newBackOff: number = backOff * options.exponentialOption.multiplier;
         backOff = newBackOff > options.exponentialOption.maxInterval ? options.exponentialOption.maxInterval : newBackOff;
       }
-      return retryAsync.apply(this, [fn, args, maxAttempts, backOff, doRetry]);
+      return retryAsync.apply(this, [fn, args, maxAttempts, backOff]);
     }
+  }
+
+  function canRetry(e: Error): boolean {
+    if (options.doRetry && !options.doRetry(e)) {
+      return false;
+    }
+    if (options.value?.length && !options.value.some(errorType => e instanceof errorType)) {
+      return false;
+    }
+    return true;
+  }
+
+  function setExponentialBackOffPolicyDefault(): void {
+    !options.backOff && (options.backOff = 1000);
+    options.exponentialOption = {
+      ...{ maxInterval: 2000, multiplier: 2 },
+      ...options.exponentialOption,
+    };
   }
 }
 
@@ -64,6 +79,7 @@ export interface RetryOptions {
   backOffPolicy?: BackOffPolicy;
   backOff?: number;
   doRetry?: (e: any) => boolean;
+  value?: ErrorConstructor[];
   exponentialOption?: { maxInterval: number; multiplier: number };
 }
 
@@ -71,3 +87,4 @@ export enum BackOffPolicy {
   FixedBackOffPolicy = 'FixedBackOffPolicy',
   ExponentialBackOffPolicy = 'ExponentialBackOffPolicy'
 }
+
