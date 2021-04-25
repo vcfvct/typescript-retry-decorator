@@ -1,15 +1,16 @@
 module.exports = {
-  moduleFileExtensions: ["ts", "js", "json"],
+  moduleFileExtensions: ['ts', 'js', 'json'],
   transform: {
-    "^.+\\.(ts)$": "ts-jest"
+    '^.+\\.(ts)$': 'ts-jest',
   },
   globals: {
-    "ts-jest": {
-      tsconfig: "tsconfig.json"
-    }
+    'ts-jest': {
+      tsconfig: 'tsconfig.json',
+    },
   },
-  testMatch: ["**/*.test.ts"],
-  testPathIgnorePatterns: ["/node_modules/", "/dist/", "/lib/"],
+  testMatch: ['**/*.test.ts'],
+  testPathIgnorePatterns: ['/node_modules/', '/dist/', '/lib/'],
   collectCoverage: true,
+  'coverageReporters': ['json', 'html'],
   verbose: true,
 };
