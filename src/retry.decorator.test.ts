@@ -62,18 +62,22 @@ describe('Retry Test', () => {
 
   test('normal retry', async () => {
     const calledSpy = jest.spyOn(testClass, 'called');
-    calledSpy.mockRejectedValueOnce('bad');
-    calledSpy.mockResolvedValueOnce('good');
+    calledSpy.mockRejectedValueOnce(new Error('rejected'));
+    calledSpy.mockResolvedValueOnce('fulfilled');
     await testClass.testMethod();
     expect(calledSpy).toHaveBeenCalledTimes(2);
   });
 
   test('exceed max retry', async () => {
     const calledSpy = jest.spyOn(testClass, 'called');
-    calledSpy.mockRejectedValue('bad');
+    const errorMsg = 'rejected';
+    calledSpy.mockRejectedValue(new Error(errorMsg));
     try {
       await testClass.testMethod();
-    } catch (e) {}
+    } catch (e) {
+      expect(e).not.toBeUndefined();
+      expect(e.message.includes(errorMsg));
+    }
     expect(calledSpy).toHaveBeenCalledTimes(3);
   });
 
