@@ -25,9 +25,9 @@ export function Retryable(options: RetryOptions): Function {
       try {
         return await retryAsync.apply(this, [originalFn, args, options.maxAttempts, options.backOff]);
       } catch (e) {
-        if (e.message === 'maxAttempts') {
-          e.code = '429';
-          e.message = `Failed for '${propertyKey}' for ${options.maxAttempts} times.`;
+        if (e instanceof MaxAttemptsError) {
+          const msgPrefix = `Failed for '${propertyKey}' for ${options.maxAttempts} times.`;
+          e.message = e.message ? `${msgPrefix} Original Error: ${e.message}` : msgPrefix;
         }
         throw e;
       }
@@ -41,7 +41,7 @@ export function Retryable(options: RetryOptions): Function {
     } catch (e) {
       if (--maxAttempts < 0) {
         e?.message && console.error(e.message);
-        throw new Error('maxAttempts');
+        throw new MaxAttemptsError(e?.message);
       }
       if (!canRetry(e)) {
         throw e;
@@ -72,6 +72,15 @@ export function Retryable(options: RetryOptions): Function {
       ...options.exponentialOption,
     };
   }
+}
+
+export class MaxAttemptsError extends Error {
+  code = '429'
+  /* if target is ES5, need the 'new.target.prototype'
+  constructor(msg?: string) {
+      super(msg)
+      Object.setPrototypeOf(this, new.target.prototype)
+    } */
 }
 
 export interface RetryOptions {
