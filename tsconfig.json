@@ -8,6 +8,7 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "sourceMap": true,
+    "declarationMap": true,
     "skipLibCheck": true,
     "lib": [
       "es2017",
