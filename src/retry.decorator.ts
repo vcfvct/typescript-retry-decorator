@@ -5,7 +5,7 @@ import { sleep } from './utils';
  *
  * @param options the 'RetryOptions'
  */
-export function Retryable(options: RetryOptions): Function {
+export function Retryable(options: RetryOptions): DecoratorFunction {
   /**
    * target: The prototype of the class (Object)
    * propertyKey: The name of the method (string | symbol).
@@ -16,7 +16,7 @@ export function Retryable(options: RetryOptions): Function {
    *
    */
   return function(target: Record<string, any>, propertyKey: string, descriptor: TypedPropertyDescriptor<any>) {
-    const originalFn: Function = descriptor.value;
+    const originalFn = descriptor.value;
     // set default value for ExponentialBackOffPolicy
     if (options.backOffPolicy === BackOffPolicy.ExponentialBackOffPolicy) {
       setExponentialBackOffPolicyDefault();
@@ -35,7 +35,7 @@ export function Retryable(options: RetryOptions): Function {
     return descriptor;
   };
 
-  async function retryAsync(fn: Function, args: any[], maxAttempts: number, backOff?: number): Promise<any> {
+  async function retryAsync(fn: () => any, args: any[], maxAttempts: number, backOff?: number): Promise<any> {
     try {
       return await fn.apply(this, args);
     } catch (e) {
@@ -75,7 +75,7 @@ export function Retryable(options: RetryOptions): Function {
 }
 
 export class MaxAttemptsError extends Error {
-  code = '429'
+  code = '429';
   /* if target is ES5, need the 'new.target.prototype'
   constructor(msg?: string) {
       super(msg)
@@ -96,4 +96,6 @@ export enum BackOffPolicy {
   FixedBackOffPolicy = 'FixedBackOffPolicy',
   ExponentialBackOffPolicy = 'ExponentialBackOffPolicy'
 }
+
+export type DecoratorFunction = (target: Record<string, any>, propertyKey: string, descriptor: TypedPropertyDescriptor<any>) => TypedPropertyDescriptor<any>;
 
