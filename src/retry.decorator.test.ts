@@ -53,6 +53,27 @@ class TestClass {
   }
 }
 
+describe('Capture original error data Test', () => {
+  test('exceed max retry', async () => {
+    const testClass = new TestClass();
+
+    const originalStackTrace = 'foo';
+    const errorMsg = 'rejected';
+
+    const unexpectedError = new Error(errorMsg);
+    unexpectedError.stack = originalStackTrace;
+
+    const calledSpy = jest.spyOn(testClass, 'called');
+
+    calledSpy.mockRejectedValue(unexpectedError);
+    try {
+      await testClass.testMethod();
+    } catch (e) {
+      expect(e.stack).toEqual(originalStackTrace);
+    }
+  });
+});
+
 
 describe('Retry Test', () => {
   let testClass: TestClass;
