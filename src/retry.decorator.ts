@@ -22,36 +22,30 @@ export function Retryable(options: RetryOptions): DecoratorFunction {
       setExponentialBackOffPolicyDefault();
     }
     descriptor.value = async function(...args: any[]) {
-      try {
-        return await retryAsync.apply(this, [originalFn, args, options.maxAttempts, options.backOff]);
-      } catch (e) {
-        if (e instanceof MaxAttemptsError) {
-          const msgPrefix = `Failed for '${propertyKey}' for ${options.maxAttempts} times.`;
-          e.message = e.message ? `${msgPrefix} Original Error: ${e.message}` : msgPrefix;
-        }
-        throw e;
-      }
+      return await retryAsync.apply(this, [originalFn, args, options.maxAttempts, options.backOff]);
     };
     return descriptor;
   };
 
   async function retryAsync(fn: () => any, args: any[], maxAttempts: number, backOff?: number): Promise<any> {
-    try {
-      return await fn.apply(this, args);
-    } catch (e) {
-      if (--maxAttempts < 0) {
-        e?.message && console.error(e.message);
-        throw new MaxAttemptsError(e?.message);
-      }
-      if (!canRetry(e)) {
-        throw e;
-      }
-      backOff && (await sleep(backOff));
-      if (options.backOffPolicy === BackOffPolicy.ExponentialBackOffPolicy) {
-        const newBackOff: number = backOff * options.exponentialOption.multiplier;
-        backOff = newBackOff > options.exponentialOption.maxInterval ? options.exponentialOption.maxInterval : newBackOff;
-      }
-      return retryAsync.apply(this, [fn, args, maxAttempts, backOff]);
+    for (let i = 0; i<(maxAttempts+1); i++) {
+      try {
+        return await fn.apply(this, args);
+      } catch (e) {
+        if (i == maxAttempts) {
+          if (options.reraise) {
+            throw e;
+          }
+          throw new MaxAttemptsError(e, i);
+        }
+        if (!canRetry(e)) {
+          throw e;
+        }
+        backOff && (await sleep(backOff));
+        if (options.backOffPolicy === BackOffPolicy.ExponentialBackOffPolicy) {
+          backOff = Math.min(backOff * Math.pow(options.exponentialOption.multiplier, i), options.exponentialOption.maxInterval);
+        }
+      } 
     }
   }
 
@@ -76,11 +70,14 @@ export function Retryable(options: RetryOptions): DecoratorFunction {
 
 export class MaxAttemptsError extends Error {
   code = '429';
-  /* if target is ES5, need the 'new.target.prototype'
-  constructor(msg?: string) {
-      super(msg)
-      Object.setPrototypeOf(this, new.target.prototype)
-    } */
+  public retryCount: number;
+  public originalError: Error; 
+  constructor(originalError: Error, retryCount: number) {
+    super(`Max retry reached: ${retryCount}, original error: ${originalError.message}`);
+    this.originalError = originalError;
+    this.retryCount = retryCount;
+    Object.setPrototypeOf(this, MaxAttemptsError.prototype);
+  }
 }
 
 export interface RetryOptions {
@@ -90,6 +87,7 @@ export interface RetryOptions {
   doRetry?: (e: any) => boolean;
   value?: ErrorConstructor[];
   exponentialOption?: { maxInterval: number; multiplier: number };
+  reraise?: boolean;
 }
 
 export enum BackOffPolicy {

@@ -1,4 +1,4 @@
-import { BackOffPolicy, Retryable } from './retry.decorator';
+import { BackOffPolicy, MaxAttemptsError, Retryable } from './retry.decorator';
 
 class TestClass {
   count: number;
@@ -44,6 +44,15 @@ class TestClass {
     exponentialOption: { maxInterval: 4000, multiplier: 3 },
   })
   async exponentialBackOffRetry(): Promise<void> {
+    console.info(`Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the ${++this.count} time at ${new Date().toLocaleTimeString()}`);
+    await this.called();
+  }
+
+  @Retryable({
+    maxAttempts: 1,
+    reraise: true,
+  })
+  async reraiseError(): Promise<void> {
     console.info(`Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the ${++this.count} time at ${new Date().toLocaleTimeString()}`);
     await this.called();
   }
@@ -131,6 +140,39 @@ describe('Retry Test', () => {
       await testClass.exponentialBackOffRetry();
     } catch (e) {}
     expect(calledSpy).toHaveBeenCalledTimes(4);
+  });
+
+  class CustomError extends Error {
+    code = '999';
+    constructor(message: string) {
+      super(message);
+      Object.setPrototypeOf(this, CustomError.prototype);
+    }
+  }
+
+  test('original error is contained inside MaxAttemptsError', async () => {
+    jest.setTimeout(60000);
+    const calledSpy = jest.spyOn(testClass, 'called');
+    calledSpy.mockImplementation(() => { throw new CustomError("test-error"); });
+    try {
+      await testClass.testMethod();
+    } catch (e) {
+      expect(e).toBeInstanceOf(MaxAttemptsError);
+      expect(e.originalError).toBeInstanceOf(CustomError);
+      expect(e.originalError.message).toBe("test-error");
+    }
+  });
+
+  test('reraise will rethrow original Error', async () => {
+    jest.setTimeout(60000);
+    const calledSpy = jest.spyOn(testClass, 'called');
+    calledSpy.mockImplementation(() => { throw new CustomError("test-error"); });
+    try {
+      await testClass.reraiseError();
+    } catch (e) {
+      expect(e).toBeInstanceOf(CustomError);
+      expect(e.message).toBe("test-error");
+    }
   });
 });
 
