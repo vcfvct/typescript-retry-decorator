@@ -16,6 +16,7 @@ Import and use it. Retry for `Promise` is supported as long as the `runtime` has
 | exponentialOption | object                | No        | { maxInterval: 2000,    multiplier: 2 } | This is for the `ExponentialBackOffPolicy` <br/> The max interval each wait and the multiplier for the `backOff`. |
 | doRetry           | (e: any) => boolean   | No        | -                                       | Function with error parameter to decide if repetition is necessary.                                               |
 | value             | Error/Exception class | No        | [ ]                                     | An array of Exception types that are retryable.                                                                   |
+| useOriginalError  | throw original exception| No        | false                                     | it throws `MaxAttemptsError` by default, if this is set to *true*, the `original` exception would be thrown instead.                                                                   |
 
 ### Example
 ```typescript
@@ -30,8 +31,8 @@ class RetryExample {
     throw new Error('I failed!');
   }
 
-  @Retryable({ 
-    maxAttempts: 3, 
+  @Retryable({
+    maxAttempts: 3,
     value: [SyntaxError, ReferenceError]
   })
   static async noDelaySpecificRetry(): Promise<void> {
@@ -39,7 +40,7 @@ class RetryExample {
     throw new SyntaxError('I failed with SyntaxError!');
   }
 
-  @Retryable({ 
+  @Retryable({
     maxAttempts: 3,
     backOff: 1000,
     doRetry: (e: Error) => {
@@ -51,7 +52,7 @@ class RetryExample {
     throw new Error('Error: 429');
   }
 
-  @Retryable({ 
+  @Retryable({
     maxAttempts: 3,
     backOff: 1000,
     doRetry: (e: Error) => {
@@ -120,7 +121,7 @@ class RetryExample {
   } catch (e) {
     console.info(`All retry done as expected, final message: '${e.message}'`);
   }
-  
+
 })();
 
 function resetCount() {
