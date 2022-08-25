@@ -41,7 +41,13 @@ export function Retryable(options: RetryOptions): DecoratorFunction {
     } catch (e) {
       if (--maxAttempts < 0) {
         e?.message && console.error(e.message);
-        throw new MaxAttemptsError(e?.message);
+        const maxAttemptsErrorInstance = new  MaxAttemptsError(e?.message);
+        // Add the existing error stack if present
+        if(e?.stack) {
+          maxAttemptsErrorInstance.stack = e.stack;
+        }
+
+        throw maxAttemptsErrorInstance;
       }
       if (!canRetry(e)) {
         throw e;
