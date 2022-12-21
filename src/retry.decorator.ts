@@ -40,7 +40,7 @@ export function Retryable(options: RetryOptions): DecoratorFunction {
       return await fn.apply(this, args);
     } catch (e) {
       if (--maxAttempts < 0) {
-        e?.message && console.error(e.message);
+        (typeof options.useConsoleLogger !== 'boolean' || options.useConsoleLogger) && e?.message && console.error(e.message);
         const maxAttemptsErrorInstance = new  MaxAttemptsError(e?.message);
         // Add the existing error stack if present
         if(e?.stack) {
@@ -96,6 +96,7 @@ export interface RetryOptions {
   doRetry?: (e: any) => boolean;
   value?: ErrorConstructor[];
   exponentialOption?: { maxInterval: number; multiplier: number };
+  useConsoleLogger?: boolean;
 }
 
 export enum BackOffPolicy {

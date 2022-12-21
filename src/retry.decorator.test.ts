@@ -48,6 +48,12 @@ class TestClass {
     await this.called();
   }
 
+  @Retryable({ maxAttempts: 2, useConsoleLogger: false })
+  async noLog(): Promise<void> {
+    console.log(`test method is called for ${++this.count} time`);
+    await this.called();
+  }
+
   async called(): Promise<string> {
     return 'from real implementation';
   }
@@ -152,6 +158,16 @@ describe('Retry Test', () => {
       await testClass.exponentialBackOffRetry();
     } catch (e) {}
     expect(calledSpy).toHaveBeenCalledTimes(4);
+  });
+
+  test('no log', async () => {
+    const calledSpy = jest.spyOn(testClass, 'called');
+    const errorSpy = jest.spyOn(console, 'error');
+    calledSpy.mockRejectedValueOnce(new Error('rejected'));
+    calledSpy.mockResolvedValueOnce('fulfilled');
+    await testClass.testMethod();
+    expect(calledSpy).toHaveBeenCalledTimes(2);
+    expect(errorSpy).not.toHaveBeenCalled();
   });
 });
 
