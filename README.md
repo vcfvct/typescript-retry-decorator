@@ -16,7 +16,8 @@ Import and use it. Retry for `Promise` is supported as long as the `runtime` has
 | exponentialOption | object                | No        | { maxInterval: 2000,    multiplier: 2 } | This is for the `ExponentialBackOffPolicy` <br/> The max interval each wait and the multiplier for the `backOff`. |
 | doRetry           | (e: any) => boolean   | No        | -                                       | Function with error parameter to decide if repetition is necessary.                                               |
 | value             | Error/Exception class | No        | [ ]                                     | An array of Exception types that are retryable.                                                                   |
-| useConsoleLogger  | boolean               | No        | true                                    | Print errors on console.                                                                                           |
+| useConsoleLogger  | boolean               | No        | true                                    | Print errors on console.                                                                                          |
+| useOriginalError  | throw original exception| No      | false                                   | `MaxAttemptsError` by default. if this is set to *true*, the `original` exception would be thrown instead.        |
 
 ### Example
 ```typescript

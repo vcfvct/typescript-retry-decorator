@@ -1,4 +1,5 @@
-import { BackOffPolicy, Retryable } from './retry.decorator';
+import exp = require('constants');
+import { BackOffPolicy, MaxAttemptsError, Retryable } from './retry.decorator';
 
 class TestClass {
   count: number;
@@ -54,6 +55,11 @@ class TestClass {
     await this.called();
   }
 
+  @Retryable({ maxAttempts: 2, useOriginalError: true })
+  async useOriginalError(): Promise<void> {
+    await this.called();
+  }
+
   async called(): Promise<string> {
     return 'from real implementation';
   }
@@ -102,7 +108,7 @@ describe('Retry Test', () => {
     try {
       await testClass.testMethod();
     } catch (e) {
-      expect(e).not.toBeUndefined();
+      expect(e).toBeInstanceOf(MaxAttemptsError);
       expect(e.message.includes(errorMsg));
     }
     expect(calledSpy).toHaveBeenCalledTimes(3);
@@ -168,6 +174,20 @@ describe('Retry Test', () => {
     await testClass.testMethod();
     expect(calledSpy).toHaveBeenCalledTimes(2);
     expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  // CustomError for testing.
+  class CustomError extends Error { }
+
+  test('throw original error', async () => {
+    jest.setTimeout(60000);
+    const calledSpy = jest.spyOn(testClass, 'called');
+    calledSpy.mockImplementation(() => { throw new CustomError(); });
+    try {
+      await testClass.useOriginalError();
+    } catch (e) {
+      expect(e).toBeInstanceOf(CustomError);
+    }
   });
 });
 
