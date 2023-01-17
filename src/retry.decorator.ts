@@ -41,6 +41,7 @@ export function Retryable(options: RetryOptions): DecoratorFunction {
     } catch (e) {
       if (--maxAttempts < 0) {
         (typeof options.useConsoleLogger !== 'boolean' || options.useConsoleLogger) && e?.message && console.error(e.message);
+        if(options.useOriginalError) throw e;
         const maxAttemptsErrorInstance = new  MaxAttemptsError(e?.message);
         // Add the existing error stack if present
         if(e?.stack) {
@@ -54,8 +55,7 @@ export function Retryable(options: RetryOptions): DecoratorFunction {
       }
       backOff && (await sleep(backOff));
       if (options.backOffPolicy === BackOffPolicy.ExponentialBackOffPolicy) {
-        const newBackOff: number = backOff * options.exponentialOption.multiplier;
-        backOff = newBackOff > options.exponentialOption.maxInterval ? options.exponentialOption.maxInterval : newBackOff;
+        backOff = Math.min(backOff * options.exponentialOption.multiplier, options.exponentialOption.maxInterval);
       }
       return retryAsync.apply(this, [fn, args, maxAttempts, backOff]);
     }
@@ -90,13 +90,14 @@ export class MaxAttemptsError extends Error {
 }
 
 export interface RetryOptions {
-  maxAttempts: number;
   backOffPolicy?: BackOffPolicy;
   backOff?: number;
   doRetry?: (e: any) => boolean;
-  value?: ErrorConstructor[];
   exponentialOption?: { maxInterval: number; multiplier: number };
+  maxAttempts: number;
+  value?: ErrorConstructor[];
   useConsoleLogger?: boolean;
+  useOriginalError?: boolean;
 }
 
 export enum BackOffPolicy {

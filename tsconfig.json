@@ -11,6 +11,7 @@
     "declarationMap": true,
     "skipLibCheck": true,
     "lib": [
+      "dom",
       "es2017",
       "esnext.asynciterable",
     ],
