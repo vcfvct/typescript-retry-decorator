@@ -49,6 +49,16 @@ class TestClass {
     await this.called();
   }
 
+  @Retryable({
+    maxAttempts: 3,
+    backOffPolicy: BackOffPolicy.ExponentialBackOffPolicy,
+    exponentialOption: { maxInterval: 4000, multiplier: 2, includeJitter: true },
+  })
+  async exponentialBackOffWithJitterRetry(): Promise<void> {
+    console.info(`Calling ExponentialBackOffRetry backOff 1s, multiplier=2 for the ${++this.count} time at ${new Date().toLocaleTimeString()}`);
+    await this.called();
+  }
+
   @Retryable({ maxAttempts: 2, useConsoleLogger: false })
   async noLog(): Promise<void> {
     console.log(`test method is called for ${++this.count} time`);
@@ -162,6 +172,16 @@ describe('Retry Test', () => {
     calledSpy.mockImplementation(() => { throw new Error(); });
     try {
       await testClass.exponentialBackOffRetry();
+    } catch (e) {}
+    expect(calledSpy).toHaveBeenCalledTimes(4);
+  });
+
+  test('exponential backOff policy with jitter', async () => {
+    jest.setTimeout(60000);
+    const calledSpy = jest.spyOn(testClass, 'called');
+    calledSpy.mockImplementation(() => { throw new Error(); });
+    try {
+      await testClass.exponentialBackOffWithJitterRetry();
     } catch (e) {}
     expect(calledSpy).toHaveBeenCalledTimes(4);
   });

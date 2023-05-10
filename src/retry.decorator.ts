@@ -53,7 +53,7 @@ export function Retryable(options: RetryOptions): DecoratorFunction {
       if (!canRetry(e)) {
         throw e;
       }
-      backOff && (await sleep(backOff));
+      backOff && (await sleep(getBackoffWithJitter(backOff)));
       if (options.backOffPolicy === BackOffPolicy.ExponentialBackOffPolicy) {
         backOff = Math.min(backOff * options.exponentialOption.multiplier, options.exponentialOption.maxInterval);
       }
@@ -78,6 +78,19 @@ export function Retryable(options: RetryOptions): DecoratorFunction {
       ...options.exponentialOption,
     };
   }
+
+  /**
+   * If jitter is enabled, the actual backoff time is calculated as follows:
+   * backoff / 2 + (random value from 0 to backoff / 2)
+   * @see https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
+   * @param backoff - base backoff time in ms
+   */
+  function getBackoffWithJitter(backoff: number): number {
+    if (options.exponentialOption?.includeJitter) {
+      return backoff / 2 + (Math.random() * backoff / 2);
+    }
+    return backoff;
+  }
 }
 
 export class MaxAttemptsError extends Error {
@@ -93,7 +106,16 @@ export interface RetryOptions {
   backOffPolicy?: BackOffPolicy;
   backOff?: number;
   doRetry?: (e: any) => boolean;
-  exponentialOption?: { maxInterval: number; multiplier: number };
+  exponentialOption?: {
+    maxInterval: number;
+    multiplier: number;
+    /**
+     * Optional.  If true, the backoff time will include jitter.
+     * For example, if the backoff time is 1000ms, the actual backoff time will be between 500ms and 1000ms.
+     * For more information, see https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
+     */
+    includeJitter?: boolean ;
+  };
   maxAttempts: number;
   value?: ErrorConstructor[];
   useConsoleLogger?: boolean;
