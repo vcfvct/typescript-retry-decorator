@@ -1,5 +1,4 @@
-import exp = require('constants');
-import { BackOffPolicy, MaxAttemptsError, Retryable } from './retry.decorator';
+import {BackOffPolicy, ExponentialBackoffStrategy, MaxAttemptsError, Retryable} from './retry.decorator';
 
 class TestClass {
   count: number;
@@ -52,7 +51,7 @@ class TestClass {
   @Retryable({
     maxAttempts: 3,
     backOffPolicy: BackOffPolicy.ExponentialBackOffPolicy,
-    exponentialOption: { maxInterval: 4000, multiplier: 2, includeJitter: true },
+    exponentialOption: { maxInterval: 4000, multiplier: 2, backoffStrategy: ExponentialBackoffStrategy.FullJitter },
   })
   async exponentialBackOffWithJitterRetry(): Promise<void> {
     console.info(`Calling ExponentialBackOffRetry backOff 1s, multiplier=2 for the ${++this.count} time at ${new Date().toLocaleTimeString()}`);

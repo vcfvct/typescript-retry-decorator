@@ -53,7 +53,7 @@ export function Retryable(options: RetryOptions): DecoratorFunction {
       if (!canRetry(e)) {
         throw e;
       }
-      backOff && (await sleep(getBackoffWithJitter(backOff)));
+      backOff && (await sleep(applyBackoffStrategy(backOff)));
       if (options.backOffPolicy === BackOffPolicy.ExponentialBackOffPolicy) {
         backOff = Math.min(backOff * options.exponentialOption.multiplier, options.exponentialOption.maxInterval);
       }
@@ -80,16 +80,19 @@ export function Retryable(options: RetryOptions): DecoratorFunction {
   }
 
   /**
-   * If jitter is enabled, the actual backoff time is calculated as follows:
-   * backoff / 2 + (random value from 0 to backoff / 2)
+   * Calculate the actual backoff using the specified backoff strategy, if any
    * @see https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
-   * @param backoff - base backoff time in ms
+   * @param baseBackoff - base backoff time in ms
    */
-  function getBackoffWithJitter(backoff: number): number {
-    if (options.exponentialOption?.includeJitter) {
-      return backoff / 2 + (Math.random() * backoff / 2);
+  function applyBackoffStrategy(baseBackoff: number): number {
+    const { backoffStrategy } = options.exponentialOption ?? {};
+    if (backoffStrategy === ExponentialBackoffStrategy.EqualJitter) {
+      return baseBackoff / 2 + (Math.random() * baseBackoff / 2);
     }
-    return backoff;
+    if (backoffStrategy === ExponentialBackoffStrategy.FullJitter) {
+      return Math.random() * baseBackoff;
+    }
+    return baseBackoff;
   }
 }
 
@@ -110,11 +113,10 @@ export interface RetryOptions {
     maxInterval: number;
     multiplier: number;
     /**
-     * Optional.  If true, the backoff time will include jitter.
-     * For example, if the backoff time is 1000ms, the actual backoff time will be between 500ms and 1000ms.
+     * Optional.  If provided, the backoff time will include jitter using the desired strategy.
      * For more information, see https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
      */
-    includeJitter?: boolean ;
+    backoffStrategy?: ExponentialBackoffStrategy;
   };
   maxAttempts: number;
   value?: ErrorConstructor[];
@@ -125,6 +127,11 @@ export interface RetryOptions {
 export enum BackOffPolicy {
   FixedBackOffPolicy = 'FixedBackOffPolicy',
   ExponentialBackOffPolicy = 'ExponentialBackOffPolicy'
+}
+
+export enum ExponentialBackoffStrategy {
+  FullJitter = 'FullJitter',
+  EqualJitter = 'EqualJitter',
 }
 
 export type DecoratorFunction = (target: Record<string, any>, propertyKey: string, descriptor: TypedPropertyDescriptor<any>) => TypedPropertyDescriptor<any>;
