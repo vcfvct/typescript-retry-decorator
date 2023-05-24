@@ -129,8 +129,18 @@ export enum BackOffPolicy {
   ExponentialBackOffPolicy = 'ExponentialBackOffPolicy'
 }
 
+/**
+ * Represents different strategies for applying jitter to backoff times.
+ * @see https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
+ */
 export enum ExponentialBackoffStrategy {
+  /**
+   * The backoff time will be (base backoff time) * (random number between 0 and 1).
+   */
   FullJitter = 'FullJitter',
+  /**
+   * The backoff time will be (base backoff time / 2) + (random number between 0 and (base backoff time / 2)).
+   */
   EqualJitter = 'EqualJitter',
 }
 
