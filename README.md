@@ -8,16 +8,25 @@ Import and use it. Retry for `Promise` is supported as long as the `runtime` has
 > npm install typescript-retry-decorator
 
 ### Options
-| Option Name       | Type                  | Required? | Default                                 | Description                                                                                                       |
-|:-----------------:|:------:|:---------:|:---------------------------------------:|:--------------------------------------------------------------------------------------------------------------------------------:|
-| maxAttempts       | number                | Yes       | -                                       | The max attempts to try                                                                                           |
-| backOff           | number                | No        | 0                                       | number in `ms` to back off.  If not set, then no wait                                                             |
-| backOffPolicy     | enum                  | No        | FixedBackOffPolicy                      | can be fixed or exponential                                                                                       |
-| exponentialOption | object                | No        | { maxInterval: 2000,    multiplier: 2 } | This is for the `ExponentialBackOffPolicy` <br/> The max interval each wait and the multiplier for the `backOff`. |
-| doRetry           | (e: any) => boolean   | No        | -                                       | Function with error parameter to decide if repetition is necessary.                                               |
-| value             | Error/Exception class | No        | [ ]                                     | An array of Exception types that are retryable.                                                                   |
-| useConsoleLogger  | boolean               | No        | true                                    | Print errors on console.                                                                                          |
-| useOriginalError  | throw original exception| No      | false                                   | `MaxAttemptsError` by default. if this is set to *true*, the `original` exception would be thrown instead.        |
+| Option Name       |           Type           | Required? |                 Default                 |                                                    Description                                                    |
+|:-----------------:|:------------------------:|:---------:|:---------------------------------------:|:-----------------------------------------------------------------------------------------------------------------:|
+| maxAttempts       |          number          |    Yes    |                    -                    |                                              The max attempts to try                                              |
+| backOff           |          number          |    No     |                    0                    |                               number in `ms` to back off.  If not set, then no wait                               |
+| backOffPolicy     |           enum           |    No     |         FixedBackOffPolicy              |                                            can be fixed or exponential                                            |
+| exponentialOption |          object          |    No     | `{ maxInterval: 2000,  multiplier: 2 }` | This is for the `ExponentialBackOffPolicy` <br/> The max interval each wait and the multiplier for the `backOff`. |
+| doRetry           |   (e: any) => boolean    |    No     |                    -                    |                        Function with error parameter to decide if repetition is necessary.                        |
+| value             |  Error/Exception class   |    No     |                   [ ]                   |                                  An array of Exception types that are retryable.                                  |
+| useConsoleLogger  |         boolean          |    No     |                  true                   |                                             Print errors on console.                                              |
+| useOriginalError  | throw original exception |    No     |                  false                  |    `MaxAttemptsError` by default. if this is set to *true*, the `original` exception would be thrown instead.     |
+
+#### Exponential options
+
+The `exponentialOption` allows you to fine-tune the exponential backoff strategy using several options:
+- `maxInterval`: The maximum interval between two retries. The default value is 2000 ms.
+- `multiplier`: The multiplier to use to generate the next backoff interval from the last one. The default value is 2.
+- `backoffStrategy`: Optional.  If specified, determines the strategy used to introduce "jitter" between retry intervals.  For an explanation of the available strategies and why you might select one over the other, check out [this article](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/).
+  - `ExponentialBackoffStrategy.FullJitter`: The base backoff interval is multiplied by a random number between 0 and 1.
+  - `ExponentialBackoffStrategy.EqualJitter`: The backoff interval is (base interval / 2) + (random value between 0 and base interval / 2).
 
 ### Example
 ```typescript
@@ -85,6 +94,17 @@ class RetryExample {
     console.info(`Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the ${count++} time at ${new Date().toLocaleTimeString()}`);
     throw new Error('I failed!');
   }
+
+  @Retryable({
+    maxAttempts: 3,
+    backOffPolicy: BackOffPolicy.ExponentialBackOffPolicy,
+    backOff: 1000,
+    exponentialOption: { maxInterval: 4000, multiplier: 2, backoffStrategy: ExponentialBackoffStrategy.EqualJitter }
+  })
+  static async ExponentialBackOffWithJitterRetry() {
+    console.info(`Calling ExponentialBackOffWithJitterRetry backOff 1s, multiplier=2 for the ${count++} time at ${new Date().toLocaleTimeString()}`);
+    throw new Error('I failed!');
+  }
 }
 
 (async () => {
@@ -122,7 +142,14 @@ class RetryExample {
   } catch (e) {
     console.info(`All retry done as expected, final message: '${e.message}'`);
   }
-  
+
+  try {
+    resetCount();
+    await RetryExample.ExponentialBackOffWithJitterRetry();
+  } catch (e) {
+    console.info(`All retry done as expected, final message: '${e.message}'`);
+  }
+
 })();
 
 function resetCount() {
@@ -164,4 +191,10 @@ Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 3 time at 4:12:
 Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the 4 time at 4:13:03 PM
 I failed!
 All retry done as expected, final message: 'Failed for 'ExponentialBackOffRetry' for 3 times.'
+Calling ExponentialBackOffWithJitterRetry backOff 1s, multiplier=2 for the 1 time at 4:13:03 PM
+Calling ExponentialBackOffWithJitterRetry backOff 1s, multiplier=2 for the 2 time at 4:13:03 PM
+Calling ExponentialBackOffWithJitterRetry backOff 1s, multiplier=2 for the 3 time at 4:13:05 PM
+Calling ExponentialBackOffWithJitterRetry backOff 1s, multiplier=2 for the 4 time at 4:13:09 PM
+I failed!
+All retry done as expected, final message: 'Failed for 'ExponentialBackOffWithJitterRetry' for 3 times.'
 ```
