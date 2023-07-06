@@ -105,6 +105,10 @@ export class MaxAttemptsError extends Error {
     } */
 }
 
+interface ConstructableError {
+  new (...args: any[]): Error;
+}
+
 export interface RetryOptions {
   backOffPolicy?: BackOffPolicy;
   backOff?: number;
@@ -119,7 +123,7 @@ export interface RetryOptions {
     backoffStrategy?: ExponentialBackoffStrategy;
   };
   maxAttempts: number;
-  value?: ErrorConstructor[];
+  value?: ConstructableError[];
   useConsoleLogger?: boolean;
   useOriginalError?: boolean;
 }
