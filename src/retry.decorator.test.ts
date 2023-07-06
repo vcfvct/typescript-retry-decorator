@@ -1,4 +1,17 @@
-import {BackOffPolicy, ExponentialBackoffStrategy, MaxAttemptsError, Retryable} from './retry.decorator';
+import { BackOffPolicy, ExponentialBackoffStrategy, MaxAttemptsError, Retryable } from './retry.decorator';
+
+
+// CustomError for testing.
+class CustomError extends Error {
+  constructor(message?: string) {
+    // Call the parent class constructor with the provided message
+    super(message);
+
+    // Set the prototype and name properties
+    Object.setPrototypeOf(this, CustomError.prototype);
+    this.name = 'CustomError';
+  }
+}
 
 class TestClass {
   count: number;
@@ -11,7 +24,7 @@ class TestClass {
     await this.called();
   }
 
-  @Retryable({ maxAttempts: 2, value: [SyntaxError, ReferenceError] })
+  @Retryable({ maxAttempts: 3, value: [SyntaxError, ReferenceError, CustomError] })
   async testMethodWithException(): Promise<void> {
     console.log(`test method is called for ${++this.count} time`);
     await this.called();
@@ -125,7 +138,7 @@ describe('Retry Test', () => {
 
   test('retry with specific error', async () => {
     const calledSpy = jest.spyOn(testClass, 'called');
-    calledSpy.mockImplementationOnce(() => { throw new SyntaxError('I failed!'); });
+    calledSpy.mockImplementationOnce(() => { throw new CustomError('I failed!'); });
     await testClass.testMethodWithException();
     expect(calledSpy).toHaveBeenCalledTimes(2);
   });
@@ -135,7 +148,7 @@ describe('Retry Test', () => {
     calledSpy.mockImplementationOnce(() => { throw new Error('I failed!'); });
     try {
       await testClass.testMethodWithException();
-    } catch (e) {}
+    } catch (e) { }
     expect(calledSpy).toHaveBeenCalledTimes(1);
   });
 
@@ -152,7 +165,7 @@ describe('Retry Test', () => {
     calledSpy.mockImplementationOnce(() => { throw new Error('Error: 500'); });
     try {
       await testClass.testDoRetry();
-    } catch (e) {}
+    } catch (e) { }
     expect(calledSpy).toHaveBeenCalledTimes(1);
   });
 
@@ -161,7 +174,7 @@ describe('Retry Test', () => {
     calledSpy.mockImplementation(() => { throw new Error('Error: 500'); });
     try {
       await testClass.fixedBackOffRetry();
-    } catch (e) {}
+    } catch (e) { }
     expect(calledSpy).toHaveBeenCalledTimes(4);
   });
 
@@ -171,7 +184,7 @@ describe('Retry Test', () => {
     calledSpy.mockImplementation(() => { throw new Error(); });
     try {
       await testClass.exponentialBackOffRetry();
-    } catch (e) {}
+    } catch (e) { }
     expect(calledSpy).toHaveBeenCalledTimes(4);
   });
 
@@ -181,7 +194,7 @@ describe('Retry Test', () => {
     calledSpy.mockImplementation(() => { throw new Error(); });
     try {
       await testClass.exponentialBackOffWithJitterRetry();
-    } catch (e) {}
+    } catch (e) { }
     expect(calledSpy).toHaveBeenCalledTimes(4);
   });
 
@@ -195,8 +208,6 @@ describe('Retry Test', () => {
     expect(errorSpy).not.toHaveBeenCalled();
   });
 
-  // CustomError for testing.
-  class CustomError extends Error { }
 
   test('throw original error', async () => {
     jest.setTimeout(60000);
