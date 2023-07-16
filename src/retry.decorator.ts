@@ -53,9 +53,18 @@ export function Retryable(options: RetryOptions): DecoratorFunction {
       if (!canRetry(e)) {
         throw e;
       }
-      backOff && (await sleep(applyBackoffStrategy(backOff)));
-      if (options.backOffPolicy === BackOffPolicy.ExponentialBackOffPolicy) {
-        backOff = Math.min(backOff * options.exponentialOption.multiplier, options.exponentialOption.maxInterval);
+      if (backOff) {
+        await sleep(applyBackoffStrategy(backOff));
+
+        if (
+          options.exponentialOption &&
+          options.backOffPolicy === BackOffPolicy.ExponentialBackOffPolicy
+        ) {
+          backOff = Math.min(
+            backOff * options.exponentialOption.multiplier,
+            options.exponentialOption.maxInterval
+          );
+        }
       }
       return retryAsync.apply(this, [fn, args, maxAttempts, backOff]);
     }
