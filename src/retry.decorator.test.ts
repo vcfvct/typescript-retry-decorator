@@ -1,5 +1,9 @@
 import { BackOffPolicy, ExponentialBackoffStrategy, MaxAttemptsError, Retryable } from './retry.decorator';
+import { sleep } from './utils';
 
+jest.mock('./utils', () => ({
+  sleep: jest.fn()
+}));
 
 // CustomError for testing.
 class CustomError extends Error {
@@ -19,7 +23,7 @@ class TestClass {
     this.count = 0;
   }
   @Retryable({ maxAttempts: 2 })
-  async testMethod(): Promise<void> {
+  async testMethodWithoutBackOff(): Promise<void> {
     console.log(`test method is called for ${++this.count} time`);
     await this.called();
   }
@@ -101,7 +105,7 @@ describe('Capture original error data Test', () => {
 
     calledSpy.mockRejectedValue(unexpectedError);
     try {
-      await testClass.testMethod();
+      await testClass.testMethodWithoutBackOff();
     } catch (e) {
       expect(e.stack).toEqual(originalStackTrace);
     }
@@ -115,12 +119,13 @@ describe('Retry Test', () => {
     testClass = new TestClass();
   });
 
-  test('normal retry', async () => {
+  test('normal retry without backoff', async () => {
     const calledSpy = jest.spyOn(testClass, 'called');
     calledSpy.mockRejectedValueOnce(new Error('rejected'));
     calledSpy.mockResolvedValueOnce('fulfilled');
-    await testClass.testMethod();
+    await testClass.testMethodWithoutBackOff();
     expect(calledSpy).toHaveBeenCalledTimes(2);
+    expect(sleep).toHaveBeenCalledTimes(0);
   });
 
   test('exceed max retry', async () => {
@@ -128,7 +133,7 @@ describe('Retry Test', () => {
     const errorMsg = 'rejected';
     calledSpy.mockRejectedValue(new Error(errorMsg));
     try {
-      await testClass.testMethod();
+      await testClass.testMethodWithoutBackOff();
     } catch (e) {
       expect(e).toBeInstanceOf(MaxAttemptsError);
       expect(e.message.includes(errorMsg));
@@ -203,7 +208,7 @@ describe('Retry Test', () => {
     const errorSpy = jest.spyOn(console, 'error');
     calledSpy.mockRejectedValueOnce(new Error('rejected'));
     calledSpy.mockResolvedValueOnce('fulfilled');
-    await testClass.testMethod();
+    await testClass.testMethodWithoutBackOff();
     expect(calledSpy).toHaveBeenCalledTimes(2);
     expect(errorSpy).not.toHaveBeenCalled();
   });
