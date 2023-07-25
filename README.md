@@ -7,6 +7,8 @@ Import and use it. Retry for `Promise` is supported as long as the `runtime` has
 ### Install
 > npm install typescript-retry-decorator
 
+Depending on your setup, you may need to enable [`experimentalDecorators`](https://www.typescriptlang.org/tsconfig#experimentalDecorators) flag in `tsconfig.json`.
+
 ### Options
 | Option Name       |           Type           | Required? |                 Default                 |                                                    Description                                                    |
 |:-----------------:|:------------------------:|:---------:|:---------------------------------------:|:-----------------------------------------------------------------------------------------------------------------:|
