@@ -7,7 +7,9 @@ Import and use it. Retry for `Promise` is supported as long as the `runtime` has
 ### Install
 > npm install typescript-retry-decorator
 
-Depending on your setup, you may need to enable [`experimentalDecorators`](https://www.typescriptlang.org/tsconfig#experimentalDecorators) flag in `tsconfig.json`.
+Depending on your setup, you may need to enable [`experimentalDecorators`](https://www.typescriptlang.org/tsconfig#experimentalDecorators) in `tsconfig.json`.
+
+> TypeScript 5 note: this library also supports the new "standard decorators" call signature (`(value, context)`) at runtime. If you're using TS5+ standard decorators (without `experimentalDecorators`), it should work without extra config — see `ts5-decorator.md` for background.
 
 ### Options
 | Option Name       |           Type           | Required? |                 Default                 |                                                    Description                                                    |

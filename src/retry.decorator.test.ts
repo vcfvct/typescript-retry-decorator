@@ -2,7 +2,7 @@ import { BackOffPolicy, ExponentialBackoffStrategy, MaxAttemptsError, Retryable 
 import { sleep } from './utils';
 
 jest.mock('./utils', () => ({
-  sleep: jest.fn()
+  sleep: jest.fn(),
 }));
 
 // CustomError for testing.
@@ -116,6 +116,7 @@ describe('Capture original error data Test', () => {
 describe('Retry Test', () => {
   let testClass: TestClass;
   beforeEach(() => {
+    jest.clearAllMocks();
     testClass = new TestClass();
   });
 
@@ -153,7 +154,9 @@ describe('Retry Test', () => {
     calledSpy.mockImplementationOnce(() => { throw new Error('I failed!'); });
     try {
       await testClass.testMethodWithException();
-    } catch (e) { }
+    } catch {
+      // ignore
+    }
     expect(calledSpy).toHaveBeenCalledTimes(1);
   });
 
@@ -170,7 +173,9 @@ describe('Retry Test', () => {
     calledSpy.mockImplementationOnce(() => { throw new Error('Error: 500'); });
     try {
       await testClass.testDoRetry();
-    } catch (e) { }
+    } catch {
+      // ignore
+    }
     expect(calledSpy).toHaveBeenCalledTimes(1);
   });
 
@@ -179,7 +184,9 @@ describe('Retry Test', () => {
     calledSpy.mockImplementation(() => { throw new Error('Error: 500'); });
     try {
       await testClass.fixedBackOffRetry();
-    } catch (e) { }
+    } catch {
+      // ignore
+    }
     expect(calledSpy).toHaveBeenCalledTimes(4);
   });
 
@@ -189,7 +196,9 @@ describe('Retry Test', () => {
     calledSpy.mockImplementation(() => { throw new Error(); });
     try {
       await testClass.exponentialBackOffRetry();
-    } catch (e) { }
+    } catch {
+      // ignore
+    }
     expect(calledSpy).toHaveBeenCalledTimes(4);
   });
 
@@ -199,7 +208,9 @@ describe('Retry Test', () => {
     calledSpy.mockImplementation(() => { throw new Error(); });
     try {
       await testClass.exponentialBackOffWithJitterRetry();
-    } catch (e) { }
+    } catch {
+      // ignore
+    }
     expect(calledSpy).toHaveBeenCalledTimes(4);
   });
 
@@ -223,6 +234,36 @@ describe('Retry Test', () => {
     } catch (e) {
       expect(e).toBeInstanceOf(CustomError);
     }
+  });
+
+  test('standard decorators signature works (value, context)', async () => {
+    const fn = jest.fn();
+    fn.mockRejectedValueOnce(new Error('rejected'));
+    fn.mockResolvedValueOnce('fulfilled');
+
+    const wrapped = Retryable({ maxAttempts: 2 })(
+      fn as any,
+      { kind: 'method', name: 'myMethod' },
+    ) as any as (...args: any[]) => Promise<any>;
+
+    await expect(wrapped()).resolves.toEqual('fulfilled');
+    expect(fn).toHaveBeenCalledTimes(2);
+    expect(sleep).toHaveBeenCalledTimes(0);
+  });
+
+  test('standard decorators signature fails with MaxAttemptsError message', async () => {
+    const errorMsg = 'rejected';
+    const fn = jest.fn(async () => {
+      throw new Error(errorMsg);
+    });
+
+    const wrapped = Retryable({ maxAttempts: 2 })(
+      fn as any,
+      { kind: 'method', name: 'myMethod' },
+    ) as any as (...args: any[]) => Promise<any>;
+
+    await expect(wrapped()).rejects.toThrow('Failed for \'myMethod\' for 2 times.');
+    expect(fn).toHaveBeenCalledTimes(3);
   });
 });
 

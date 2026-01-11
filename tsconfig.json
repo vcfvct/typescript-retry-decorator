@@ -11,6 +11,10 @@
     "sourceMap": true,
     "declarationMap": true,
     "skipLibCheck": true,
+    "types": [
+      "node",
+      "jest"
+    ],
     "lib": [
       "dom",
       "es2017",
