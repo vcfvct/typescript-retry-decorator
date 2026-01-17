@@ -1,6 +1,20 @@
 import { BackOffPolicy, ExponentialBackoffStrategy, MaxAttemptsError, Retryable } from './retry.decorator';
 import { sleep } from './utils';
 
+/**
+ * Legacy decorator mode toggle
+ *
+ * This test suite covers both call shapes:
+ * - Legacy/"experimental" decorators (target, propertyKey, descriptor)
+ * - TypeScript 5+ standard decorators (value, context)
+ *
+ * To compile/run these tests in legacy mode, enable these in tsconfig.json:
+ *   "experimentalDecorators": true,
+ *   "emitDecoratorMetadata": true
+ *
+ * To compile/run in TS5 standard decorators mode, disable/remove them.
+ */
+
 jest.mock('./utils', () => ({
   sleep: jest.fn(),
 }));
