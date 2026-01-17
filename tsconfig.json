@@ -6,11 +6,15 @@
     "noImplicitAny": true,
     "declaration": true,
     "moduleResolution": "node",
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
+    // "emitDecoratorMetadata": true,
+    // "experimentalDecorators": true,
     "sourceMap": true,
     "declarationMap": true,
     "skipLibCheck": true,
+    "types": [
+      "node",
+      "jest"
+    ],
     "lib": [
       "dom",
       "es2017",

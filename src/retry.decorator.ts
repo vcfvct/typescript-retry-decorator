@@ -1,73 +1,55 @@
 import { sleep } from './utils';
 
+export interface StandardDecoratorContext {
+  kind?: string;
+  name?: string | symbol;
+}
+
+export type LegacyDecoratorFunction = (
+  target: Record<string, any>,
+  propertyKey: string | symbol,
+  descriptor: TypedPropertyDescriptor<any>
+) => TypedPropertyDescriptor<any> | void;
+
+export type StandardMethodDecorator = (
+  value: (...args: any[]) => any,
+  context: StandardDecoratorContext
+) => ((...args: any[]) => any) | void;
+
+export type RetryableDecorator = LegacyDecoratorFunction & StandardMethodDecorator;
+
+// Backwards-compat alias (pre-TS5 types)
+export type DecoratorFunction = LegacyDecoratorFunction;
+
 /**
- * retry decorator which is nothing but a high order function wrapper
+ * Retry decorator (legacy + TypeScript 5 standard decorators).
  *
- * @param options the 'RetryOptions'
+ * In legacy/"experimentalDecorators" mode, it's applied as
+ *   (target, propertyKey, descriptor)
+ *
+ * In TS5+ standard decorators mode, it's applied as
+ *   (value, context)
  */
-export function Retryable(options: RetryOptions): DecoratorFunction {
-  /**
-   * target: The prototype of the class (Object)
-   * propertyKey: The name of the method (string | symbol).
-   * descriptor: A TypedPropertyDescriptor — see the type, leveraging the Object.defineProperty under the hood.
-   *
-   * NOTE: It's very important here we do not use arrow function otherwise 'this' will be messed up due
-   * to the nature how arrow function defines this inside.
-   *
-   */
-  return function(target: Record<string, any>, propertyKey: string, descriptor: TypedPropertyDescriptor<any>) {
-    const originalFn = descriptor.value;
-    // set default value for ExponentialBackOffPolicy
-    if (options.backOffPolicy === BackOffPolicy.ExponentialBackOffPolicy) {
-      setExponentialBackOffPolicyDefault();
+export function Retryable(options: RetryOptions): RetryableDecorator {
+  function setExponentialBackOffPolicyDefault(): void {
+    if (!options.backOff) {
+      options.backOff = 1000;
     }
-    descriptor.value = async function(...args: any[]) {
-      try {
-        return await retryAsync.apply(this, [originalFn, args, options.maxAttempts, options.backOff]);
-      } catch (e) {
-        if (e instanceof MaxAttemptsError) {
-          const msgPrefix = `Failed for '${propertyKey}' for ${options.maxAttempts} times.`;
-          e.message = e.message ? `${msgPrefix} Original Error: ${e.message}` : msgPrefix;
-        }
-        throw e;
-      }
+    options.exponentialOption = {
+      ...{ maxInterval: 2000, multiplier: 2 },
+      ...options.exponentialOption,
     };
-    return descriptor;
-  };
+  }
 
-  async function retryAsync(fn: () => any, args: any[], maxAttempts: number, backOff?: number): Promise<any> {
-    try {
-      return await fn.apply(this, args);
-    } catch (e) {
-      if (--maxAttempts < 0) {
-        (typeof options.useConsoleLogger !== 'boolean' || options.useConsoleLogger) && e?.message && console.error(e.message);
-        if(options.useOriginalError) throw e;
-        const maxAttemptsErrorInstance = new  MaxAttemptsError(e?.message);
-        // Add the existing error stack if present
-        if(e?.stack) {
-          maxAttemptsErrorInstance.stack = e.stack;
-        }
-
-        throw maxAttemptsErrorInstance;
-      }
-      if (!canRetry(e)) {
-        throw e;
-      }
-      if (backOff) {
-        await sleep(applyBackoffStrategy(backOff));
-
-        if (
-          options.exponentialOption &&
-          options.backOffPolicy === BackOffPolicy.ExponentialBackOffPolicy
-        ) {
-          backOff = Math.min(
-            backOff * options.exponentialOption.multiplier,
-            options.exponentialOption.maxInterval
-          );
-        }
-      }
-      return retryAsync.apply(this, [fn, args, maxAttempts, backOff]);
+  function applyBackoffStrategy(baseBackoff: number): number {
+    const { backoffStrategy } = options.exponentialOption ?? {};
+    if (backoffStrategy === ExponentialBackoffStrategy.EqualJitter) {
+      return baseBackoff / 2 + (Math.random() * baseBackoff / 2);
     }
+    if (backoffStrategy === ExponentialBackoffStrategy.FullJitter) {
+      return Math.random() * baseBackoff;
+    }
+    return baseBackoff;
   }
 
   function canRetry(e: Error): boolean {
@@ -80,29 +62,77 @@ export function Retryable(options: RetryOptions): DecoratorFunction {
     return true;
   }
 
-  function setExponentialBackOffPolicyDefault(): void {
-    !options.backOff && (options.backOff = 1000);
-    options.exponentialOption = {
-      ...{ maxInterval: 2000, multiplier: 2 },
-      ...options.exponentialOption,
+  async function retryAsync(fn: () => any, args: any[], maxAttempts: number, backOff?: number): Promise<any> {
+    try {
+      return await fn.apply(this, args);
+    } catch (e) {
+      if (--maxAttempts < 0) {
+        if ((typeof options.useConsoleLogger !== 'boolean' || options.useConsoleLogger) && e?.message) {
+          console.error(e.message);
+        }
+        if (options.useOriginalError) {
+          throw e;
+        }
+
+        const maxAttemptsErrorInstance = new MaxAttemptsError(e?.message);
+        if (e?.stack) {
+          maxAttemptsErrorInstance.stack = e.stack;
+        }
+
+        throw maxAttemptsErrorInstance;
+      }
+      if (!canRetry(e)) {
+        throw e;
+      }
+      if (backOff) {
+        await sleep(applyBackoffStrategy(backOff));
+
+        if (options.exponentialOption && options.backOffPolicy === BackOffPolicy.ExponentialBackOffPolicy) {
+          backOff = Math.min(
+            backOff * options.exponentialOption.multiplier,
+            options.exponentialOption.maxInterval,
+          );
+        }
+      }
+      return retryAsync.apply(this, [fn, args, maxAttempts, backOff]);
+    }
+  }
+
+  function wrapWithRetry(originalFn: (...args: any[]) => any, name?: string | symbol): (...args: any[]) => Promise<any> {
+    if (options.backOffPolicy === BackOffPolicy.ExponentialBackOffPolicy) {
+      setExponentialBackOffPolicyDefault();
+    }
+
+    return async function(...args: any[]) {
+      try {
+        return await retryAsync.apply(this, [originalFn, args, options.maxAttempts, options.backOff]);
+      } catch (e) {
+        if (e instanceof MaxAttemptsError) {
+          const retryForName = typeof name === 'symbol' ? name.toString() : name;
+          const msgPrefix = `Failed for '${retryForName ?? originalFn.name}' for ${options.maxAttempts} times.`;
+          e.message = e.message ? `${msgPrefix} Original Error: ${e.message}` : msgPrefix;
+        }
+        throw e;
+      }
     };
   }
 
-  /**
-   * Calculate the actual backoff using the specified backoff strategy, if any
-   * @see https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
-   * @param baseBackoff - base backoff time in ms
-   */
-  function applyBackoffStrategy(baseBackoff: number): number {
-    const { backoffStrategy } = options.exponentialOption ?? {};
-    if (backoffStrategy === ExponentialBackoffStrategy.EqualJitter) {
-      return baseBackoff / 2 + (Math.random() * baseBackoff / 2);
+  const decorator: RetryableDecorator = function(...decoratorArgs: any[]): any {
+    // Legacy TypeScript decorators: (target, propertyKey, descriptor)
+    if (decoratorArgs.length === 3) {
+      const [, propertyKey, descriptor] = decoratorArgs as [Record<string, any>, string | symbol, TypedPropertyDescriptor<any>];
+      const originalFn = descriptor.value;
+
+      descriptor.value = wrapWithRetry(originalFn, propertyKey);
+      return descriptor;
     }
-    if (backoffStrategy === ExponentialBackoffStrategy.FullJitter) {
-      return Math.random() * baseBackoff;
-    }
-    return baseBackoff;
-  }
+
+    // TypeScript 5 standard decorators: (value, context)
+    const [value, context] = decoratorArgs as [(...args: any[]) => any, StandardDecoratorContext];
+    return wrapWithRetry(value, context?.name);
+  } as RetryableDecorator;
+
+  return decorator;
 }
 
 export class MaxAttemptsError extends Error {
@@ -156,6 +186,4 @@ export enum ExponentialBackoffStrategy {
    */
   EqualJitter = 'EqualJitter',
 }
-
-export type DecoratorFunction = (target: Record<string, any>, propertyKey: string, descriptor: TypedPropertyDescriptor<any>) => TypedPropertyDescriptor<any>;
 
