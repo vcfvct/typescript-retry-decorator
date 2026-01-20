@@ -2,15 +2,25 @@
   "name": "typescript-retry-decorator",
   "version": "2.5.1",
   "description": "A simple retry decorator for typescript with no dependency.",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "typings": "dist/index.d.ts",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/cjs/index.d.ts",
+  "typings": "dist/cjs/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/cjs/index.d.ts",
+      "require": "./dist/cjs/index.js",
+      "import": "./dist/esm/index.js"
+    }
+  },
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
     "example": "tsx src/example.ts",
     "lint": "eslint --ext .ts src/",
-    "build": "tsc --declaration --project ."
+    "build": "pnpm run build:cjs && pnpm run build:esm",
+    "build:cjs": "tsc --project tsconfig.cjs.json",
+    "build:esm": "tsc --project tsconfig.esm.json"
   },
   "repository": {
     "type": "git",
