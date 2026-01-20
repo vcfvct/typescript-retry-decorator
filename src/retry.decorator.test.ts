@@ -1,3 +1,4 @@
+import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { BackOffPolicy, ExponentialBackoffStrategy, MaxAttemptsError, Retryable } from './retry.decorator';
 import { sleep } from './utils';
 
@@ -15,8 +16,8 @@ import { sleep } from './utils';
  * To compile/run in TS5 standard decorators mode, disable/remove them.
  */
 
-jest.mock('./utils', () => ({
-  sleep: jest.fn(),
+vi.mock('./utils', () => ({
+  sleep: vi.fn(),
 }));
 
 // CustomError for testing.
@@ -115,7 +116,7 @@ describe('Capture original error data Test', () => {
     const unexpectedError = new Error(errorMsg);
     unexpectedError.stack = originalStackTrace;
 
-    const calledSpy = jest.spyOn(testClass, 'called');
+    const calledSpy = vi.spyOn(testClass, 'called');
 
     calledSpy.mockRejectedValue(unexpectedError);
     try {
@@ -130,12 +131,12 @@ describe('Capture original error data Test', () => {
 describe('Retry Test', () => {
   let testClass: TestClass;
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     testClass = new TestClass();
   });
 
   test('normal retry without backoff', async () => {
-    const calledSpy = jest.spyOn(testClass, 'called');
+    const calledSpy = vi.spyOn(testClass, 'called');
     calledSpy.mockRejectedValueOnce(new Error('rejected'));
     calledSpy.mockResolvedValueOnce('fulfilled');
     await testClass.testMethodWithoutBackOff();
@@ -144,7 +145,7 @@ describe('Retry Test', () => {
   });
 
   test('exceed max retry', async () => {
-    const calledSpy = jest.spyOn(testClass, 'called');
+    const calledSpy = vi.spyOn(testClass, 'called');
     const errorMsg = 'rejected';
     calledSpy.mockRejectedValue(new Error(errorMsg));
     try {
@@ -157,14 +158,14 @@ describe('Retry Test', () => {
   });
 
   test('retry with specific error', async () => {
-    const calledSpy = jest.spyOn(testClass, 'called');
+    const calledSpy = vi.spyOn(testClass, 'called');
     calledSpy.mockImplementationOnce(() => { throw new CustomError('I failed!'); });
     await testClass.testMethodWithException();
     expect(calledSpy).toHaveBeenCalledTimes(2);
   });
 
   test('retry with specific error not match', async () => {
-    const calledSpy = jest.spyOn(testClass, 'called');
+    const calledSpy = vi.spyOn(testClass, 'called');
     calledSpy.mockImplementationOnce(() => { throw new Error('I failed!'); });
     try {
       await testClass.testMethodWithException();
@@ -176,14 +177,14 @@ describe('Retry Test', () => {
 
 
   test('do retry when high order function retry true', async () => {
-    const calledSpy = jest.spyOn(testClass, 'called');
+    const calledSpy = vi.spyOn(testClass, 'called');
     calledSpy.mockImplementationOnce(() => { throw new Error('Error: 429'); });
     await testClass.testDoRetry();
     expect(calledSpy).toHaveBeenCalledTimes(2);
   });
 
   test('do NOT retry when high order function retry false', async () => {
-    const calledSpy = jest.spyOn(testClass, 'called');
+    const calledSpy = vi.spyOn(testClass, 'called');
     calledSpy.mockImplementationOnce(() => { throw new Error('Error: 500'); });
     try {
       await testClass.testDoRetry();
@@ -194,7 +195,7 @@ describe('Retry Test', () => {
   });
 
   test('fix backOff policy', async () => {
-    const calledSpy = jest.spyOn(testClass, 'called');
+    const calledSpy = vi.spyOn(testClass, 'called');
     calledSpy.mockImplementation(() => { throw new Error('Error: 500'); });
     try {
       await testClass.fixedBackOffRetry();
@@ -205,8 +206,7 @@ describe('Retry Test', () => {
   });
 
   test('exponential backOff policy', async () => {
-    jest.setTimeout(60000);
-    const calledSpy = jest.spyOn(testClass, 'called');
+    const calledSpy = vi.spyOn(testClass, 'called');
     calledSpy.mockImplementation(() => { throw new Error(); });
     try {
       await testClass.exponentialBackOffRetry();
@@ -214,11 +214,10 @@ describe('Retry Test', () => {
       // ignore
     }
     expect(calledSpy).toHaveBeenCalledTimes(4);
-  });
+  }, 60000);
 
   test('exponential backOff policy with jitter', async () => {
-    jest.setTimeout(60000);
-    const calledSpy = jest.spyOn(testClass, 'called');
+    const calledSpy = vi.spyOn(testClass, 'called');
     calledSpy.mockImplementation(() => { throw new Error(); });
     try {
       await testClass.exponentialBackOffWithJitterRetry();
@@ -226,11 +225,11 @@ describe('Retry Test', () => {
       // ignore
     }
     expect(calledSpy).toHaveBeenCalledTimes(4);
-  });
+  }, 60000);
 
   test('no log', async () => {
-    const calledSpy = jest.spyOn(testClass, 'called');
-    const errorSpy = jest.spyOn(console, 'error');
+    const calledSpy = vi.spyOn(testClass, 'called');
+    const errorSpy = vi.spyOn(console, 'error');
     calledSpy.mockRejectedValueOnce(new Error('rejected'));
     calledSpy.mockResolvedValueOnce('fulfilled');
     await testClass.testMethodWithoutBackOff();
@@ -240,18 +239,17 @@ describe('Retry Test', () => {
 
 
   test('throw original error', async () => {
-    jest.setTimeout(60000);
-    const calledSpy = jest.spyOn(testClass, 'called');
+    const calledSpy = vi.spyOn(testClass, 'called');
     calledSpy.mockImplementation(() => { throw new CustomError(); });
     try {
       await testClass.useOriginalError();
     } catch (e) {
       expect(e).toBeInstanceOf(CustomError);
     }
-  });
+  }, 60000);
 
   test('standard decorators signature works (value, context)', async () => {
-    const fn = jest.fn();
+    const fn = vi.fn();
     fn.mockRejectedValueOnce(new Error('rejected'));
     fn.mockResolvedValueOnce('fulfilled');
 
@@ -267,7 +265,7 @@ describe('Retry Test', () => {
 
   test('standard decorators signature fails with MaxAttemptsError message', async () => {
     const errorMsg = 'rejected';
-    const fn = jest.fn(async () => {
+    const fn = vi.fn(async () => {
       throw new Error(errorMsg);
     });
 
