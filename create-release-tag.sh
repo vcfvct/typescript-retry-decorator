@@ -13,8 +13,9 @@ COMMIT_SHA=$(git rev-parse HEAD)
 
 echo "Tagging commit ${COMMIT_SHA} as ${TAG}"
 
-# Create an annotated tag
-git tag -a "${TAG}" -m "Release version ${VERSION}
+# Create an annotated tag using heredoc for better readability
+git tag -a "${TAG}" -m "$(cat <<EOF
+Release version ${VERSION}
 
 ## What's Changed
 
@@ -40,7 +41,9 @@ git tag -a "${TAG}" -m "Release version ${VERSION}
 - Fixed TypeScript type annotations in utility functions
 - Build output now properly supports both CommonJS and ESM consumers
 
-Full Changelog: https://github.com/vcfvct/typescript-retry-decorator/blob/main/CHANGELOG.md"
+Full Changelog: https://github.com/vcfvct/typescript-retry-decorator/blob/v${VERSION}/CHANGELOG.md
+EOF
+)"
 
 echo "Tag ${TAG} created successfully!"
 echo ""

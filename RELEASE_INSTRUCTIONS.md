@@ -54,7 +54,7 @@ git push origin v2.5.2
    - Fixed TypeScript type annotations in utility functions
    - Build output now properly supports both CommonJS and ESM consumers
    
-   Full Changelog: https://github.com/vcfvct/typescript-retry-decorator/blob/main/CHANGELOG.md"
+   Full Changelog: https://github.com/vcfvct/typescript-retry-decorator/blob/v2.5.2/CHANGELOG.md"
    ```
 
 2. **Verify the tag was created:**
