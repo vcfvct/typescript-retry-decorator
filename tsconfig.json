@@ -16,16 +16,9 @@
     ],
     "lib": [
       "dom",
-      "es2017",
-      "esnext.asynciterable",
+      "es2018"
     ],
-    "outDir": "dist",
-    "baseUrl": ".",
-    "paths": {
-      "*": [
-        "node_modules/*",
-      ]
-    }
+    "outDir": "dist"
   },
   "include": [
     "src/**/*",
