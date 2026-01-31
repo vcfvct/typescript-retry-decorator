@@ -16,7 +16,8 @@ This repository is `typescript-retry-decorator`: a small TypeScript library that
   - `src/utils.ts`: helpers (e.g. `sleep`)
   - `src/*.test.ts`: Vitest tests (e.g. `src/retry.decorator.test.ts`)
 - `dist/`: TypeScript build output (generated) - contains `cjs` and `esm` folders.
-- Config: `tsconfig.json` (base), `tsconfig.cjs.json`, `tsconfig.esm.json`, `.eslintrc.js`, `vitest.config.mts`.
+- Config: `tsconfig.json` (base), `tsconfig.cjs.json`, `tsconfig.esm.json`, `eslint.config.mjs`, `vitest.config.mts`.
+- `esm-package.json`: Copied to `dist/esm/package.json` during build to mark ESM output as `"type": "module"`.
 
 ## Package Manager
 
@@ -33,7 +34,8 @@ This repository is `typescript-retry-decorator`: a small TypeScript library that
 ### Lint
 
 - Lint source: `pnpm lint`
-  - Script: `eslint --ext .ts src/`
+  - Script: `eslint src/`
+- **ESLint 9** with flat config format (`eslint.config.mjs`)
 
 ### Test
 
@@ -65,7 +67,7 @@ This repository is `typescript-retry-decorator`: a small TypeScript library that
 
 ## Code Style (Enforced by ESLint)
 
-See `.eslintrc.js` for rules.
+See `eslint.config.mjs` for rules.
 
 ### Formatting & Syntax
 - **Indentation**: 2 spaces.
@@ -78,7 +80,7 @@ See `.eslintrc.js` for rules.
   - Prefer named functions for top-level exports if hoisting is beneficial (though `const` exports are common here).
 
 ### Imports
-- Prefer relative imports within `src/` (e.g., `import { sleep } from './utils';`).
+- Prefer relative imports within `src/` with `.js` extensions for ESM compatibility (e.g., `import { sleep } from './utils.js';`).
 - **NO** absolute imports or path aliases (keep it simple for library portability).
 - Keep external and internal imports grouped separately.
 
