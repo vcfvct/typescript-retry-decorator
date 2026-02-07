@@ -38,9 +38,9 @@
   },
   "homepage": "https://github.com/vcfvct/typescript-retry-decorator#readme",
   "devDependencies": {
-    "@eslint/js": "^9.39.2",
+    "@eslint/js": "^10.0.1",
     "@types/node": "^18.19.74",
-    "eslint": "^9.26.0",
+    "eslint": "^10.0.0",
     "globals": "^17.2.0",
     "tsx": "^4.21.0",
     "typescript": "5.4.5",
