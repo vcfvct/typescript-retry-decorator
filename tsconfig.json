@@ -5,7 +5,7 @@
     "target": "ES2015",
     "noImplicitAny": true,
     "declaration": true,
-    "moduleResolution": "node",
+    "rootDir": "src",
     // "emitDecoratorMetadata": true,
     // "experimentalDecorators": true,
     "sourceMap": true,

@@ -1,8 +1,16 @@
 import { sleep } from './utils.js';
 
+type AnyFunction = (...args: any[]) => any;
+type RetryableFunction<T extends AnyFunction> = (
+  this: ThisParameterType<T>,
+  ...args: Parameters<T>
+) => Promise<Awaited<ReturnType<T>>>;
+
 export interface StandardDecoratorContext {
   kind?: string;
   name?: string | symbol;
+  static?: boolean;
+  private?: boolean;
 }
 
 export type LegacyDecoratorFunction = (
@@ -12,17 +20,24 @@ export type LegacyDecoratorFunction = (
 ) => TypedPropertyDescriptor<any> | void;
 
 export type StandardMethodDecorator = (
-  value: (...args: any[]) => any,
+  value: AnyFunction,
   context: StandardDecoratorContext
-) => ((...args: any[]) => any) | void;
+) => AnyFunction | void;
 
-export type RetryableDecorator = LegacyDecoratorFunction & StandardMethodDecorator;
+export interface RetryableDecorator {
+  <T extends AnyFunction>(value: T, context: StandardDecoratorContext): RetryableFunction<T>;
+  <T extends AnyFunction>(
+    target: object,
+    propertyKey: string | symbol,
+    descriptor: TypedPropertyDescriptor<T>
+  ): TypedPropertyDescriptor<T> | void;
+}
 
 // Backwards-compat alias (pre-TS5 types)
 export type DecoratorFunction = LegacyDecoratorFunction;
 
 /**
- * Retry decorator (legacy + TypeScript 5 standard decorators).
+ * Retry decorator (legacy + TypeScript 5/7 standard decorators).
  *
  * In legacy/"experimentalDecorators" mode, it's applied as
  *   (target, propertyKey, descriptor)
@@ -62,27 +77,35 @@ export function Retryable(options: RetryOptions): RetryableDecorator {
     return true;
   }
 
-  async function retryAsync(fn: () => any, args: any[], maxAttempts: number, backOff?: number): Promise<any> {
+  async function retryAsync<TArgs extends unknown[], TReturn>(
+    this: unknown,
+    fn: (this: unknown, ...args: TArgs) => TReturn,
+    args: TArgs,
+    maxAttempts: number,
+    backOff?: number,
+  ): Promise<Awaited<TReturn>> {
     try {
-      return await fn.apply(this, args);
+      return (await fn.call(this, ...args)) as Awaited<TReturn>;
     } catch (e) {
+      const error = e as Error & { message?: string; stack?: string };
+
       if (--maxAttempts < 0) {
-        if ((typeof options.useConsoleLogger !== 'boolean' || options.useConsoleLogger) && e?.message) {
-          console.error(e.message);
+        if ((typeof options.useConsoleLogger !== 'boolean' || options.useConsoleLogger) && error?.message) {
+          console.error(error.message);
         }
         if (options.useOriginalError) {
-          throw e;
+          throw error;
         }
 
-        const maxAttemptsErrorInstance = new MaxAttemptsError(e?.message);
-        if (e?.stack) {
-          maxAttemptsErrorInstance.stack = e.stack;
+        const maxAttemptsErrorInstance = new MaxAttemptsError(error?.message);
+        if (error?.stack) {
+          maxAttemptsErrorInstance.stack = error.stack;
         }
 
         throw maxAttemptsErrorInstance;
       }
-      if (!canRetry(e)) {
-        throw e;
+      if (!canRetry(error)) {
+        throw error;
       }
       if (backOff) {
         await sleep(applyBackoffStrategy(backOff));
@@ -94,18 +117,18 @@ export function Retryable(options: RetryOptions): RetryableDecorator {
           );
         }
       }
-      return retryAsync.apply(this, [fn, args, maxAttempts, backOff]);
+      return (retryAsync as any).call(this, fn, args, maxAttempts, backOff) as Promise<Awaited<TReturn>>;
     }
   }
 
-  function wrapWithRetry(originalFn: (...args: any[]) => any, name?: string | symbol): (...args: any[]) => Promise<any> {
+  function wrapWithRetry<T extends AnyFunction>(originalFn: T, name?: string | symbol): RetryableFunction<T> {
     if (options.backOffPolicy === BackOffPolicy.ExponentialBackOffPolicy) {
       setExponentialBackOffPolicyDefault();
     }
 
-    return async function(...args: any[]) {
+    return async function(this: ThisParameterType<T>, ...args: Parameters<T>): Promise<Awaited<ReturnType<T>>> {
       try {
-        return await retryAsync.apply(this, [originalFn, args, options.maxAttempts, options.backOff]);
+        return await ((retryAsync as any).call(this, originalFn, args, options.maxAttempts, options.backOff) as Promise<Awaited<ReturnType<T>>>);
       } catch (e) {
         if (e instanceof MaxAttemptsError) {
           const retryForName = typeof name === 'symbol' ? name.toString() : name;
@@ -114,21 +137,23 @@ export function Retryable(options: RetryOptions): RetryableDecorator {
         }
         throw e;
       }
-    };
+    } as RetryableFunction<T>;
   }
 
   const decorator: RetryableDecorator = function(...decoratorArgs: any[]): any {
     // Legacy TypeScript decorators: (target, propertyKey, descriptor)
     if (decoratorArgs.length === 3) {
-      const [, propertyKey, descriptor] = decoratorArgs as [Record<string, any>, string | symbol, TypedPropertyDescriptor<any>];
+      const [, propertyKey, descriptor] = decoratorArgs as [Record<string, any>, string | symbol, TypedPropertyDescriptor<AnyFunction>];
       const originalFn = descriptor.value;
 
-      descriptor.value = wrapWithRetry(originalFn, propertyKey);
+      if (originalFn) {
+        descriptor.value = wrapWithRetry(originalFn, propertyKey);
+      }
       return descriptor;
     }
 
-    // TypeScript 5 standard decorators: (value, context)
-    const [value, context] = decoratorArgs as [(...args: any[]) => any, StandardDecoratorContext];
+    // TypeScript 5/7 standard decorators: (value, context)
+    const [value, context] = decoratorArgs as [AnyFunction, StandardDecoratorContext];
     return wrapWithRetry(value, context?.name);
   } as RetryableDecorator;
 

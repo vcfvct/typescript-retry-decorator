@@ -122,7 +122,8 @@ describe('Capture original error data Test', () => {
     try {
       await testClass.testMethodWithoutBackOff();
     } catch (e) {
-      expect(e.stack).toEqual(originalStackTrace);
+      const error = e as Error;
+      expect(error.stack).toEqual(originalStackTrace);
     }
   });
 });
@@ -151,8 +152,9 @@ describe('Retry Test', () => {
     try {
       await testClass.testMethodWithoutBackOff();
     } catch (e) {
-      expect(e).toBeInstanceOf(MaxAttemptsError);
-      expect(e.message.includes(errorMsg));
+      const error = e as Error;
+      expect(error).toBeInstanceOf(MaxAttemptsError);
+      expect(error.message.includes(errorMsg));
     }
     expect(calledSpy).toHaveBeenCalledTimes(3);
   });
@@ -261,6 +263,27 @@ describe('Retry Test', () => {
     await expect(wrapped()).resolves.toEqual('fulfilled');
     expect(fn).toHaveBeenCalledTimes(2);
     expect(sleep).toHaveBeenCalledTimes(0);
+  });
+
+  test('standard decorators signature preserves this context', async () => {
+    const state = {
+      count: 0,
+      async method(this: { count: number }, value: string): Promise<string> {
+        this.count += 1;
+        if (this.count === 1) {
+          throw new Error('rejected');
+        }
+        return `${value}-${this.count}`;
+      },
+    };
+
+    const wrapped = Retryable({ maxAttempts: 2 })(
+      state.method,
+      { kind: 'method', name: 'myMethod' },
+    ) as (this: typeof state, value: string) => Promise<string>;
+
+    await expect(wrapped.call(state, 'value')).resolves.toEqual('value-2');
+    expect(state.count).toEqual(2);
   });
 
   test('standard decorators signature fails with MaxAttemptsError message', async () => {

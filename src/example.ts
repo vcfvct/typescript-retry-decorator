@@ -66,42 +66,48 @@ class RetryExample {
     resetCount();
     await RetryExample.noDelayRetry();
   } catch (e) {
-    console.info(`All retry done as expected, final message: '${e.message}'`);
+    const error = e as Error;
+    console.info(`All retry done as expected, final message: '${error.message}'`);
   }
 
   try {
     resetCount();
     await RetryExample.noDelaySpecificRetry();
   } catch (e) {
-    console.info(`All retry done as expected, final message: '${e.message}'`);
+    const error = e as Error;
+    console.info(`All retry done as expected, final message: '${error.message}'`);
   }
 
   try {
     resetCount();
     await RetryExample.doRetry();
   } catch (e) {
-    console.info(`All retry done as expected, final message: '${e.message}'`);
+    const error = e as Error;
+    console.info(`All retry done as expected, final message: '${error.message}'`);
   }
 
   try {
     resetCount();
     await RetryExample.doNotRetry();
   } catch (e) {
-    console.info(`All retry done as expected, final message: '${e.message}'`);
+    const error = e as Error;
+    console.info(`All retry done as expected, final message: '${error.message}'`);
   }
 
   try {
     resetCount();
     await RetryExample.fixedBackOffRetry();
   } catch (e) {
-    console.info(`All retry done as expected, final message: '${e.message}'`);
+    const error = e as Error;
+    console.info(`All retry done as expected, final message: '${error.message}'`);
   }
 
   try {
     resetCount();
     await RetryExample.ExponentialBackOffRetry();
   } catch (e) {
-    console.info(`All retry done as expected, final message: '${e.message}'`);
+    const error = e as Error;
+    console.info(`All retry done as expected, final message: '${error.message}'`);
   }
 
 })();
