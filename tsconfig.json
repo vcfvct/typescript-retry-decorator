@@ -4,6 +4,7 @@
     "strictNullChecks": true,
     "target": "ES2015",
     "noImplicitAny": true,
+    "useUnknownInCatchVariables": false,
     "declaration": true,
     "moduleResolution": "node",
     // "emitDecoratorMetadata": true,

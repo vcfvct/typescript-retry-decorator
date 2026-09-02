@@ -3,6 +3,14 @@ import { sleep } from './utils.js';
 export interface StandardDecoratorContext {
   kind?: string;
   name?: string | symbol;
+  static?: boolean;
+  private?: boolean;
+  access?: {
+    get?: (...args: any[]) => unknown;
+    set?: (...args: any[]) => void;
+    has?: (...args: any[]) => boolean;
+  };
+  addInitializer?: (initializer: () => void) => void;
 }
 
 export type LegacyDecoratorFunction = (
@@ -22,7 +30,7 @@ export type RetryableDecorator = LegacyDecoratorFunction & StandardMethodDecorat
 export type DecoratorFunction = LegacyDecoratorFunction;
 
 /**
- * Retry decorator (legacy + TypeScript 5 standard decorators).
+ * Retry decorator (legacy + TypeScript 5+ standard decorators).
  *
  * In legacy/"experimentalDecorators" mode, it's applied as
  *   (target, propertyKey, descriptor)
@@ -62,10 +70,10 @@ export function Retryable(options: RetryOptions): RetryableDecorator {
     return true;
   }
 
-  async function retryAsync(fn: () => any, args: any[], maxAttempts: number, backOff?: number): Promise<any> {
+  async function retryAsync(this: any, fn: (...args: any[]) => any, args: any[], maxAttempts: number, backOff?: number): Promise<any> {
     try {
       return await fn.apply(this, args);
-    } catch (e) {
+    } catch (e: any) {
       if (--maxAttempts < 0) {
         if ((typeof options.useConsoleLogger !== 'boolean' || options.useConsoleLogger) && e?.message) {
           console.error(e.message);
@@ -103,10 +111,10 @@ export function Retryable(options: RetryOptions): RetryableDecorator {
       setExponentialBackOffPolicyDefault();
     }
 
-    return async function(...args: any[]) {
+    return async function(this: any, ...args: any[]) {
       try {
         return await retryAsync.apply(this, [originalFn, args, options.maxAttempts, options.backOff]);
-      } catch (e) {
+      } catch (e: any) {
         if (e instanceof MaxAttemptsError) {
           const retryForName = typeof name === 'symbol' ? name.toString() : name;
           const msgPrefix = `Failed for '${retryForName ?? originalFn.name}' for ${options.maxAttempts} times.`;
