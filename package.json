@@ -17,7 +17,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "example": "tsx src/example.ts",
-    "lint": "eslint src/",
+    "lint": "biome check src/",
     "build": "pnpm run build:cjs && pnpm run build:esm",
     "build:cjs": "tsc --project tsconfig.cjs.json",
     "build:esm": "tsc --project tsconfig.esm.json && cp esm-package.json dist/esm/package.json"
@@ -38,13 +38,10 @@
   },
   "homepage": "https://github.com/vcfvct/typescript-retry-decorator#readme",
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
+    "@biomejs/biome": "^2.5.11",
     "@types/node": "^18.19.74",
-    "eslint": "^10.0.0",
-    "globals": "^17.2.0",
     "tsx": "^4.21.0",
     "typescript": "^7.0.0",
-    "typescript-eslint": "^8.54.0",
     "vitest": "^4.0.0"
   }
 }
