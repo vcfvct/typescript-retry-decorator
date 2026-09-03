@@ -38,9 +38,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
-      - name: Approve pnpm build scripts
-        run: pnpm approve-builds --all
-
       - name: Install dependencies
         run: pnpm install
 
