@@ -16,7 +16,7 @@ This repository is `typescript-retry-decorator`: a small TypeScript library that
   - `src/utils.ts`: helpers (e.g. `sleep`)
   - `src/*.test.ts`: Vitest tests (e.g. `src/retry.decorator.test.ts`)
 - `dist/`: TypeScript build output (generated) - contains `cjs` and `esm` folders.
-- Config: `tsconfig.json` (base), `tsconfig.cjs.json`, `tsconfig.esm.json`, `eslint.config.mjs`, `vitest.config.mts`.
+- Config: `tsconfig.json` (base), `tsconfig.cjs.json`, `tsconfig.esm.json`, `biome.json`, `vitest.config.mts`.
 - `esm-package.json`: Copied to `dist/esm/package.json` during build to mark ESM output as `"type": "module"`.
 
 ## Package Manager
@@ -34,8 +34,8 @@ This repository is `typescript-retry-decorator`: a small TypeScript library that
 ### Lint
 
 - Lint source: `pnpm lint`
-  - Script: `eslint src/`
-- **ESLint 9** with flat config format (`eslint.config.mjs`)
+  - Script: `biome check src/`
+- **Biome** with configuration in `biome.json`
 
 ### Test
 
@@ -65,9 +65,9 @@ This repository is `typescript-retry-decorator`: a small TypeScript library that
   - Supports TS5 standard decorators (stage 3) via runtime detection.
 - **Strictness**: `noImplicitAny`, `strictNullChecks` are enabled.
 
-## Code Style (Enforced by ESLint)
+## Code Style (Enforced by Biome)
 
-See `eslint.config.mjs` for rules.
+See `biome.json` for rules.
 
 ### Formatting & Syntax
 - **Indentation**: 2 spaces.

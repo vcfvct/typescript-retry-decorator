@@ -1,4 +1,4 @@
-import { BackOffPolicy, Retryable } from "./retry.decorator.js";
+import { BackOffPolicy, Retryable } from './retry.decorator.js';
 
 let count = 1;
 
@@ -8,7 +8,7 @@ class RetryExample {
     console.info(
       `Calling noDelayRetry for the ${count++} time at ${new Date().toLocaleTimeString()}`,
     );
-    throw new Error("I failed!");
+    throw new Error('I failed!');
   }
 
   @Retryable({ maxAttempts: 3, value: [SyntaxError, ReferenceError] })
@@ -16,33 +16,33 @@ class RetryExample {
     console.info(
       `Calling noDelayRetry for the ${count++} time at ${new Date().toLocaleTimeString()}`,
     );
-    throw new SyntaxError("I failed with SyntaxError!");
+    throw new SyntaxError('I failed with SyntaxError!');
   }
 
   @Retryable({
     maxAttempts: 3,
     backOff: 1000,
     doRetry: (e: Error) => {
-      return e.message === "Error: 429";
+      return e.message === 'Error: 429';
     },
   })
   static async doRetry(): Promise<void> {
     console.info(`Calling doRetry for the ${count++} time at ${new Date().toLocaleTimeString()}`);
-    throw new Error("Error: 429");
+    throw new Error('Error: 429');
   }
 
   @Retryable({
     maxAttempts: 3,
     backOff: 1000,
     doRetry: (e: Error) => {
-      return e.message === "Error: 429";
+      return e.message === 'Error: 429';
     },
   })
   static async doNotRetry(): Promise<void> {
     console.info(
       `Calling doNotRetry for the ${count++} time at ${new Date().toLocaleTimeString()}`,
     );
-    throw new Error("Error: 404");
+    throw new Error('Error: 404');
   }
 
   @Retryable({
@@ -54,7 +54,7 @@ class RetryExample {
     console.info(
       `Calling fixedBackOffRetry 1s for the ${count++} time at ${new Date().toLocaleTimeString()}`,
     );
-    throw new Error("I failed!");
+    throw new Error('I failed!');
   }
 
   @Retryable({
@@ -67,7 +67,7 @@ class RetryExample {
     console.info(
       `Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the ${count++} time at ${new Date().toLocaleTimeString()}`,
     );
-    throw new Error("I failed!");
+    throw new Error('I failed!');
   }
 }
 

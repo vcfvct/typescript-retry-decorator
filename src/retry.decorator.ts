@@ -1,4 +1,4 @@
-import { sleep } from "./utils.js";
+import { sleep } from './utils.js';
 
 export interface StandardDecoratorContext {
   kind?: string;
@@ -82,7 +82,7 @@ export function Retryable(options: RetryOptions): RetryableDecorator {
     } catch (e: any) {
       if (--maxAttempts < 0) {
         if (
-          (typeof options.useConsoleLogger !== "boolean" || options.useConsoleLogger) &&
+          (typeof options.useConsoleLogger !== 'boolean' || options.useConsoleLogger) &&
           e?.message
         ) {
           console.error(e.message);
@@ -136,7 +136,7 @@ export function Retryable(options: RetryOptions): RetryableDecorator {
         ]);
       } catch (e: any) {
         if (e instanceof MaxAttemptsError) {
-          const retryForName = typeof name === "symbol" ? name.toString() : name;
+          const retryForName = typeof name === 'symbol' ? name.toString() : name;
           const msgPrefix = `Failed for '${retryForName ?? originalFn.name}' for ${options.maxAttempts} times.`;
           e.message = e.message ? `${msgPrefix} Original Error: ${e.message}` : msgPrefix;
         }
@@ -168,7 +168,7 @@ export function Retryable(options: RetryOptions): RetryableDecorator {
 }
 
 export class MaxAttemptsError extends Error {
-  code = "429";
+  code = '429';
   /* if target is ES5, need the 'new.target.prototype'
   constructor(msg?: string) {
       super(msg)
@@ -200,8 +200,8 @@ export interface RetryOptions {
 }
 
 export enum BackOffPolicy {
-  FixedBackOffPolicy = "FixedBackOffPolicy",
-  ExponentialBackOffPolicy = "ExponentialBackOffPolicy",
+  FixedBackOffPolicy = 'FixedBackOffPolicy',
+  ExponentialBackOffPolicy = 'ExponentialBackOffPolicy',
 }
 
 /**
@@ -212,9 +212,9 @@ export enum ExponentialBackoffStrategy {
   /**
    * The backoff time will be (base backoff time) * (random number between 0 and 1).
    */
-  FullJitter = "FullJitter",
+  FullJitter = 'FullJitter',
   /**
    * The backoff time will be (base backoff time / 2) + (random number between 0 and (base backoff time / 2)).
    */
-  EqualJitter = "EqualJitter",
+  EqualJitter = 'EqualJitter',
 }
