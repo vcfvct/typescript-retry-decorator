@@ -4,8 +4,8 @@ import {
   ExponentialBackoffStrategy,
   MaxAttemptsError,
   Retryable,
-} from "./retry.decorator";
-import { sleep } from "./utils";
+} from "./retry.decorator.js";
+import { sleep } from "./utils.js";
 
 /**
  * Legacy decorator mode toggle
@@ -21,7 +21,7 @@ import { sleep } from "./utils";
  * To compile/run in TS5 standard decorators mode, disable/remove them.
  */
 
-vi.mock("./utils", () => ({
+vi.mock("./utils.js", () => ({
   sleep: vi.fn(),
 }));
 
@@ -291,6 +291,28 @@ describe("Retry Test", () => {
     await expect(wrapped()).resolves.toEqual("fulfilled");
     expect(fn).toHaveBeenCalledTimes(2);
     expect(sleep).toHaveBeenCalledTimes(0);
+  });
+
+  test("standard decorators signature preserves this binding", async () => {
+    const obj = {
+      count: 0,
+      method: Retryable({ maxAttempts: 2 })(
+        async function (this: { count: number }) {
+          this.count += 1;
+          if (this.count === 1) {
+            throw new Error("rejected");
+          }
+          return this.count;
+        },
+        {
+          kind: "method",
+          name: "method",
+        },
+      ) as (...args: any[]) => Promise<number>,
+    };
+
+    await expect(obj.method()).resolves.toBe(2);
+    expect(obj.count).toBe(2);
   });
 
   test("standard decorators signature fails with MaxAttemptsError message", async () => {

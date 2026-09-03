@@ -1,4 +1,4 @@
-import { BackOffPolicy, Retryable } from "./retry.decorator";
+import { BackOffPolicy, Retryable } from "./retry.decorator.js";
 
 let count = 1;
 
