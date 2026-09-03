@@ -1,17 +1,21 @@
-import { Retryable, BackOffPolicy } from './retry.decorator';
+import { BackOffPolicy, Retryable } from './retry.decorator.js';
 
 let count = 1;
 
 class RetryExample {
   @Retryable({ maxAttempts: 3 })
   static async noDelayRetry(): Promise<void> {
-    console.info(`Calling noDelayRetry for the ${count++} time at ${new Date().toLocaleTimeString()}`);
+    console.info(
+      `Calling noDelayRetry for the ${count++} time at ${new Date().toLocaleTimeString()}`,
+    );
     throw new Error('I failed!');
   }
 
   @Retryable({ maxAttempts: 3, value: [SyntaxError, ReferenceError] })
   static async noDelaySpecificRetry(): Promise<void> {
-    console.info(`Calling noDelayRetry for the ${count++} time at ${new Date().toLocaleTimeString()}`);
+    console.info(
+      `Calling noDelayRetry for the ${count++} time at ${new Date().toLocaleTimeString()}`,
+    );
     throw new SyntaxError('I failed with SyntaxError!');
   }
 
@@ -35,7 +39,9 @@ class RetryExample {
     },
   })
   static async doNotRetry(): Promise<void> {
-    console.info(`Calling doNotRetry for the ${count++} time at ${new Date().toLocaleTimeString()}`);
+    console.info(
+      `Calling doNotRetry for the ${count++} time at ${new Date().toLocaleTimeString()}`,
+    );
     throw new Error('Error: 404');
   }
 
@@ -45,7 +51,9 @@ class RetryExample {
     backOff: 1000,
   })
   static async fixedBackOffRetry(): Promise<void> {
-    console.info(`Calling fixedBackOffRetry 1s for the ${count++} time at ${new Date().toLocaleTimeString()}`);
+    console.info(
+      `Calling fixedBackOffRetry 1s for the ${count++} time at ${new Date().toLocaleTimeString()}`,
+    );
     throw new Error('I failed!');
   }
 
@@ -56,7 +64,9 @@ class RetryExample {
     exponentialOption: { maxInterval: 4000, multiplier: 3 },
   })
   static async ExponentialBackOffRetry(): Promise<void> {
-    console.info(`Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the ${count++} time at ${new Date().toLocaleTimeString()}`);
+    console.info(
+      `Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the ${count++} time at ${new Date().toLocaleTimeString()}`,
+    );
     throw new Error('I failed!');
   }
 }
@@ -103,7 +113,6 @@ class RetryExample {
   } catch (e) {
     console.info(`All retry done as expected, final message: '${e.message}'`);
   }
-
 })();
 
 function resetCount(): void {

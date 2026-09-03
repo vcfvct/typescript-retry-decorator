@@ -3,17 +3,25 @@ import { sleep } from './utils.js';
 export interface StandardDecoratorContext {
   kind?: string;
   name?: string | symbol;
+  static?: boolean;
+  private?: boolean;
+  access?: {
+    get?: (...args: any[]) => unknown;
+    set?: (...args: any[]) => void;
+    has?: (...args: any[]) => boolean;
+  };
+  addInitializer?: (initializer: () => void) => void;
 }
 
 export type LegacyDecoratorFunction = (
   target: Record<string, any>,
   propertyKey: string | symbol,
-  descriptor: TypedPropertyDescriptor<any>
+  descriptor: TypedPropertyDescriptor<any>,
 ) => TypedPropertyDescriptor<any> | void;
 
 export type StandardMethodDecorator = (
   value: (...args: any[]) => any,
-  context: StandardDecoratorContext
+  context: StandardDecoratorContext,
 ) => ((...args: any[]) => any) | void;
 
 export type RetryableDecorator = LegacyDecoratorFunction & StandardMethodDecorator;
@@ -22,7 +30,7 @@ export type RetryableDecorator = LegacyDecoratorFunction & StandardMethodDecorat
 export type DecoratorFunction = LegacyDecoratorFunction;
 
 /**
- * Retry decorator (legacy + TypeScript 5 standard decorators).
+ * Retry decorator (legacy + TypeScript 5+ standard decorators).
  *
  * In legacy/"experimentalDecorators" mode, it's applied as
  *   (target, propertyKey, descriptor)
@@ -44,7 +52,7 @@ export function Retryable(options: RetryOptions): RetryableDecorator {
   function applyBackoffStrategy(baseBackoff: number): number {
     const { backoffStrategy } = options.exponentialOption ?? {};
     if (backoffStrategy === ExponentialBackoffStrategy.EqualJitter) {
-      return baseBackoff / 2 + (Math.random() * baseBackoff / 2);
+      return baseBackoff / 2 + (Math.random() * baseBackoff) / 2;
     }
     if (backoffStrategy === ExponentialBackoffStrategy.FullJitter) {
       return Math.random() * baseBackoff;
@@ -56,18 +64,27 @@ export function Retryable(options: RetryOptions): RetryableDecorator {
     if (options.doRetry && !options.doRetry(e)) {
       return false;
     }
-    if (options.value?.length && !options.value.some(errorType => e instanceof errorType)) {
+    if (options.value?.length && !options.value.some((errorType) => e instanceof errorType)) {
       return false;
     }
     return true;
   }
 
-  async function retryAsync(fn: () => any, args: any[], maxAttempts: number, backOff?: number): Promise<any> {
+  async function retryAsync(
+    this: any,
+    fn: (...args: any[]) => any,
+    args: any[],
+    maxAttempts: number,
+    backOff?: number,
+  ): Promise<any> {
     try {
       return await fn.apply(this, args);
-    } catch (e) {
+    } catch (e: any) {
       if (--maxAttempts < 0) {
-        if ((typeof options.useConsoleLogger !== 'boolean' || options.useConsoleLogger) && e?.message) {
+        if (
+          (typeof options.useConsoleLogger !== 'boolean' || options.useConsoleLogger) &&
+          e?.message
+        ) {
           console.error(e.message);
         }
         if (options.useOriginalError) {
@@ -87,7 +104,10 @@ export function Retryable(options: RetryOptions): RetryableDecorator {
       if (backOff) {
         await sleep(applyBackoffStrategy(backOff));
 
-        if (options.exponentialOption && options.backOffPolicy === BackOffPolicy.ExponentialBackOffPolicy) {
+        if (
+          options.exponentialOption &&
+          options.backOffPolicy === BackOffPolicy.ExponentialBackOffPolicy
+        ) {
           backOff = Math.min(
             backOff * options.exponentialOption.multiplier,
             options.exponentialOption.maxInterval,
@@ -98,15 +118,23 @@ export function Retryable(options: RetryOptions): RetryableDecorator {
     }
   }
 
-  function wrapWithRetry(originalFn: (...args: any[]) => any, name?: string | symbol): (...args: any[]) => Promise<any> {
+  function wrapWithRetry(
+    originalFn: (...args: any[]) => any,
+    name?: string | symbol,
+  ): (...args: any[]) => Promise<any> {
     if (options.backOffPolicy === BackOffPolicy.ExponentialBackOffPolicy) {
       setExponentialBackOffPolicyDefault();
     }
 
-    return async function(...args: any[]) {
+    return async function (this: any, ...args: any[]) {
       try {
-        return await retryAsync.apply(this, [originalFn, args, options.maxAttempts, options.backOff]);
-      } catch (e) {
+        return await retryAsync.apply(this, [
+          originalFn,
+          args,
+          options.maxAttempts,
+          options.backOff,
+        ]);
+      } catch (e: any) {
         if (e instanceof MaxAttemptsError) {
           const retryForName = typeof name === 'symbol' ? name.toString() : name;
           const msgPrefix = `Failed for '${retryForName ?? originalFn.name}' for ${options.maxAttempts} times.`;
@@ -117,10 +145,14 @@ export function Retryable(options: RetryOptions): RetryableDecorator {
     };
   }
 
-  const decorator: RetryableDecorator = function(...decoratorArgs: any[]): any {
+  const decorator: RetryableDecorator = ((...decoratorArgs: any[]): any => {
     // Legacy TypeScript decorators: (target, propertyKey, descriptor)
     if (decoratorArgs.length === 3) {
-      const [, propertyKey, descriptor] = decoratorArgs as [Record<string, any>, string | symbol, TypedPropertyDescriptor<any>];
+      const [, propertyKey, descriptor] = decoratorArgs as [
+        Record<string, any>,
+        string | symbol,
+        TypedPropertyDescriptor<any>,
+      ];
       const originalFn = descriptor.value;
 
       descriptor.value = wrapWithRetry(originalFn, propertyKey);
@@ -130,7 +162,7 @@ export function Retryable(options: RetryOptions): RetryableDecorator {
     // TypeScript 5 standard decorators: (value, context)
     const [value, context] = decoratorArgs as [(...args: any[]) => any, StandardDecoratorContext];
     return wrapWithRetry(value, context?.name);
-  } as RetryableDecorator;
+  }) as RetryableDecorator;
 
   return decorator;
 }
@@ -169,7 +201,7 @@ export interface RetryOptions {
 
 export enum BackOffPolicy {
   FixedBackOffPolicy = 'FixedBackOffPolicy',
-  ExponentialBackOffPolicy = 'ExponentialBackOffPolicy'
+  ExponentialBackOffPolicy = 'ExponentialBackOffPolicy',
 }
 
 /**
@@ -186,4 +218,3 @@ export enum ExponentialBackoffStrategy {
    */
   EqualJitter = 'EqualJitter',
 }
-

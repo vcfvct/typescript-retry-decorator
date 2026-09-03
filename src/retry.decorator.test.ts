@@ -1,6 +1,11 @@
-import { describe, test, expect, beforeEach, vi } from 'vitest';
-import { BackOffPolicy, ExponentialBackoffStrategy, MaxAttemptsError, Retryable } from './retry.decorator';
-import { sleep } from './utils';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
+import {
+  BackOffPolicy,
+  ExponentialBackoffStrategy,
+  MaxAttemptsError,
+  Retryable,
+} from './retry.decorator.js';
+import { sleep } from './utils.js';
 
 /**
  * Legacy decorator mode toggle
@@ -16,7 +21,7 @@ import { sleep } from './utils';
  * To compile/run in TS5 standard decorators mode, disable/remove them.
  */
 
-vi.mock('./utils', () => ({
+vi.mock('./utils.js', () => ({
   sleep: vi.fn(),
 }));
 
@@ -56,7 +61,9 @@ class TestClass {
     },
   })
   async testDoRetry(): Promise<void> {
-    console.info(`Calling doRetry for the ${++this.count} time at ${new Date().toLocaleTimeString()}`);
+    console.info(
+      `Calling doRetry for the ${++this.count} time at ${new Date().toLocaleTimeString()}`,
+    );
     await this.called();
   }
 
@@ -66,7 +73,9 @@ class TestClass {
     backOff: 1000,
   })
   async fixedBackOffRetry(): Promise<void> {
-    console.info(`Calling fixedBackOffRetry 1s for the ${++this.count} time at ${new Date().toLocaleTimeString()}`);
+    console.info(
+      `Calling fixedBackOffRetry 1s for the ${++this.count} time at ${new Date().toLocaleTimeString()}`,
+    );
     await this.called();
   }
 
@@ -76,17 +85,25 @@ class TestClass {
     exponentialOption: { maxInterval: 4000, multiplier: 3 },
   })
   async exponentialBackOffRetry(): Promise<void> {
-    console.info(`Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the ${++this.count} time at ${new Date().toLocaleTimeString()}`);
+    console.info(
+      `Calling ExponentialBackOffRetry backOff 1s, multiplier=3 for the ${++this.count} time at ${new Date().toLocaleTimeString()}`,
+    );
     await this.called();
   }
 
   @Retryable({
     maxAttempts: 3,
     backOffPolicy: BackOffPolicy.ExponentialBackOffPolicy,
-    exponentialOption: { maxInterval: 4000, multiplier: 2, backoffStrategy: ExponentialBackoffStrategy.FullJitter },
+    exponentialOption: {
+      maxInterval: 4000,
+      multiplier: 2,
+      backoffStrategy: ExponentialBackoffStrategy.FullJitter,
+    },
   })
   async exponentialBackOffWithJitterRetry(): Promise<void> {
-    console.info(`Calling ExponentialBackOffRetry backOff 1s, multiplier=2 for the ${++this.count} time at ${new Date().toLocaleTimeString()}`);
+    console.info(
+      `Calling ExponentialBackOffRetry backOff 1s, multiplier=2 for the ${++this.count} time at ${new Date().toLocaleTimeString()}`,
+    );
     await this.called();
   }
 
@@ -127,7 +144,6 @@ describe('Capture original error data Test', () => {
   });
 });
 
-
 describe('Retry Test', () => {
   let testClass: TestClass;
   beforeEach(() => {
@@ -159,14 +175,18 @@ describe('Retry Test', () => {
 
   test('retry with specific error', async () => {
     const calledSpy = vi.spyOn(testClass, 'called');
-    calledSpy.mockImplementationOnce(() => { throw new CustomError('I failed!'); });
+    calledSpy.mockImplementationOnce(() => {
+      throw new CustomError('I failed!');
+    });
     await testClass.testMethodWithException();
     expect(calledSpy).toHaveBeenCalledTimes(2);
   });
 
   test('retry with specific error not match', async () => {
     const calledSpy = vi.spyOn(testClass, 'called');
-    calledSpy.mockImplementationOnce(() => { throw new Error('I failed!'); });
+    calledSpy.mockImplementationOnce(() => {
+      throw new Error('I failed!');
+    });
     try {
       await testClass.testMethodWithException();
     } catch {
@@ -175,17 +195,20 @@ describe('Retry Test', () => {
     expect(calledSpy).toHaveBeenCalledTimes(1);
   });
 
-
   test('do retry when high order function retry true', async () => {
     const calledSpy = vi.spyOn(testClass, 'called');
-    calledSpy.mockImplementationOnce(() => { throw new Error('Error: 429'); });
+    calledSpy.mockImplementationOnce(() => {
+      throw new Error('Error: 429');
+    });
     await testClass.testDoRetry();
     expect(calledSpy).toHaveBeenCalledTimes(2);
   });
 
   test('do NOT retry when high order function retry false', async () => {
     const calledSpy = vi.spyOn(testClass, 'called');
-    calledSpy.mockImplementationOnce(() => { throw new Error('Error: 500'); });
+    calledSpy.mockImplementationOnce(() => {
+      throw new Error('Error: 500');
+    });
     try {
       await testClass.testDoRetry();
     } catch {
@@ -196,7 +219,9 @@ describe('Retry Test', () => {
 
   test('fix backOff policy', async () => {
     const calledSpy = vi.spyOn(testClass, 'called');
-    calledSpy.mockImplementation(() => { throw new Error('Error: 500'); });
+    calledSpy.mockImplementation(() => {
+      throw new Error('Error: 500');
+    });
     try {
       await testClass.fixedBackOffRetry();
     } catch {
@@ -207,7 +232,9 @@ describe('Retry Test', () => {
 
   test('exponential backOff policy', async () => {
     const calledSpy = vi.spyOn(testClass, 'called');
-    calledSpy.mockImplementation(() => { throw new Error(); });
+    calledSpy.mockImplementation(() => {
+      throw new Error();
+    });
     try {
       await testClass.exponentialBackOffRetry();
     } catch {
@@ -218,7 +245,9 @@ describe('Retry Test', () => {
 
   test('exponential backOff policy with jitter', async () => {
     const calledSpy = vi.spyOn(testClass, 'called');
-    calledSpy.mockImplementation(() => { throw new Error(); });
+    calledSpy.mockImplementation(() => {
+      throw new Error();
+    });
     try {
       await testClass.exponentialBackOffWithJitterRetry();
     } catch {
@@ -237,10 +266,11 @@ describe('Retry Test', () => {
     expect(errorSpy).not.toHaveBeenCalled();
   });
 
-
   test('throw original error', async () => {
     const calledSpy = vi.spyOn(testClass, 'called');
-    calledSpy.mockImplementation(() => { throw new CustomError(); });
+    calledSpy.mockImplementation(() => {
+      throw new CustomError();
+    });
     try {
       await testClass.useOriginalError();
     } catch (e) {
@@ -253,14 +283,36 @@ describe('Retry Test', () => {
     fn.mockRejectedValueOnce(new Error('rejected'));
     fn.mockResolvedValueOnce('fulfilled');
 
-    const wrapped = Retryable({ maxAttempts: 2 })(
-      fn as any,
-      { kind: 'method', name: 'myMethod' },
-    ) as any as (...args: any[]) => Promise<any>;
+    const wrapped = Retryable({ maxAttempts: 2 })(fn as any, {
+      kind: 'method',
+      name: 'myMethod',
+    }) as any as (...args: any[]) => Promise<any>;
 
     await expect(wrapped()).resolves.toEqual('fulfilled');
     expect(fn).toHaveBeenCalledTimes(2);
     expect(sleep).toHaveBeenCalledTimes(0);
+  });
+
+  test('standard decorators signature preserves this binding', async () => {
+    const obj = {
+      count: 0,
+      method: Retryable({ maxAttempts: 2 })(
+        async function (this: { count: number }) {
+          this.count += 1;
+          if (this.count === 1) {
+            throw new Error('rejected');
+          }
+          return this.count;
+        },
+        {
+          kind: 'method',
+          name: 'method',
+        },
+      ) as (...args: any[]) => Promise<number>,
+    };
+
+    await expect(obj.method()).resolves.toBe(2);
+    expect(obj.count).toBe(2);
   });
 
   test('standard decorators signature fails with MaxAttemptsError message', async () => {
@@ -269,13 +321,12 @@ describe('Retry Test', () => {
       throw new Error(errorMsg);
     });
 
-    const wrapped = Retryable({ maxAttempts: 2 })(
-      fn as any,
-      { kind: 'method', name: 'myMethod' },
-    ) as any as (...args: any[]) => Promise<any>;
+    const wrapped = Retryable({ maxAttempts: 2 })(fn as any, {
+      kind: 'method',
+      name: 'myMethod',
+    }) as any as (...args: any[]) => Promise<any>;
 
-    await expect(wrapped()).rejects.toThrow('Failed for \'myMethod\' for 2 times.');
+    await expect(wrapped()).rejects.toThrow("Failed for 'myMethod' for 2 times.");
     expect(fn).toHaveBeenCalledTimes(3);
   });
 });
-
