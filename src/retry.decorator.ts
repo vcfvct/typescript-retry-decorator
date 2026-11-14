@@ -39,6 +39,8 @@ export type DecoratorFunction = LegacyDecoratorFunction;
  *   (value, context)
  */
 export function Retryable(options: RetryOptions): RetryableDecorator {
+  const exhaustionErrors = new WeakSet<MaxAttemptsError>();
+
   function setExponentialBackOffPolicyDefault(): void {
     if (!options.backOff) {
       options.backOff = 1000;
@@ -95,6 +97,7 @@ export function Retryable(options: RetryOptions): RetryableDecorator {
         }
 
         const maxAttemptsErrorInstance = new MaxAttemptsError(e?.message);
+        exhaustionErrors.add(maxAttemptsErrorInstance);
         if (e?.stack) {
           maxAttemptsErrorInstance.stack = e.stack;
         }
@@ -135,7 +138,7 @@ export function Retryable(options: RetryOptions): RetryableDecorator {
           options.backOff,
         ]);
       } catch (e: any) {
-        if (e instanceof MaxAttemptsError) {
+        if (e instanceof MaxAttemptsError && exhaustionErrors.has(e)) {
           const retryForName = typeof name === 'symbol' ? name.toString() : name;
           const msgPrefix = `Failed for '${retryForName ?? originalFn.name}' for ${options.maxAttempts} times.`;
           e.message = e.message ? `${msgPrefix} Original Error: ${e.message}` : msgPrefix;

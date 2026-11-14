@@ -273,6 +273,23 @@ describe('Retry Test', () => {
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
+  test('does not mutate a non-retryable MaxAttemptsError', async () => {
+    const error = new MaxAttemptsError('original failure');
+    const fn = vi.fn(async () => {
+      throw error;
+    });
+    const wrapped = Retryable({
+      maxAttempts: 0,
+      doRetry: () => false,
+    })(fn, {
+      kind: 'method',
+      name: 'outer',
+    }) as (...args: any[]) => Promise<any>;
+
+    await expect(wrapped()).rejects.toBe(error);
+    expect(error.message).toBe('original failure');
+  });
+
   test('fix backOff policy', async () => {
     const calledSpy = vi.spyOn(testClass, 'called');
     calledSpy.mockImplementation(() => {
