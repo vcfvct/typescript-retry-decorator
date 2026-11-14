@@ -290,6 +290,27 @@ describe('Retry Test', () => {
     expect(error.message).toBe('original failure');
   });
 
+  test('does not mutate a prior exhaustion error rethrown by a later call', async () => {
+    let error: Error = new Error('original failure');
+    const fn = vi.fn(async () => {
+      throw error;
+    });
+    const wrapped = Retryable({
+      maxAttempts: 0,
+      doRetry: (e: Error) => !(e instanceof MaxAttemptsError),
+    })(fn, {
+      kind: 'method',
+      name: 'outer',
+    }) as (...args: any[]) => Promise<any>;
+
+    const exhaustionError = await wrapped().catch((e: unknown) => e as MaxAttemptsError);
+    const message = exhaustionError.message;
+    error = exhaustionError;
+
+    await expect(wrapped()).rejects.toBe(exhaustionError);
+    expect(exhaustionError.message).toBe(message);
+  });
+
   test('fix backOff policy', async () => {
     const calledSpy = vi.spyOn(testClass, 'called');
     calledSpy.mockImplementation(() => {
