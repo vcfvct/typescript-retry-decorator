@@ -80,6 +80,9 @@ export function Retryable(options: RetryOptions): RetryableDecorator {
     try {
       return await fn.apply(this, args);
     } catch (e: any) {
+      if (!canRetry(e)) {
+        throw e;
+      }
       if (--maxAttempts < 0) {
         if (
           (typeof options.useConsoleLogger !== 'boolean' || options.useConsoleLogger) &&
@@ -97,9 +100,6 @@ export function Retryable(options: RetryOptions): RetryableDecorator {
         }
 
         throw maxAttemptsErrorInstance;
-      }
-      if (!canRetry(e)) {
-        throw e;
       }
       if (backOff) {
         await sleep(applyBackoffStrategy(backOff));
