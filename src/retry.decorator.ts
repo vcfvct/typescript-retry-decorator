@@ -76,10 +76,14 @@ export function Retryable(options: RetryOptions): RetryableDecorator {
     args: any[],
     maxAttempts: number,
     backOff?: number,
+    name?: string | symbol,
   ): Promise<any> {
     try {
       return await fn.apply(this, args);
     } catch (e: any) {
+      if (!canRetry(e)) {
+        throw e;
+      }
       if (--maxAttempts < 0) {
         if (
           (typeof options.useConsoleLogger !== 'boolean' || options.useConsoleLogger) &&
@@ -95,11 +99,13 @@ export function Retryable(options: RetryOptions): RetryableDecorator {
         if (e?.stack) {
           maxAttemptsErrorInstance.stack = e.stack;
         }
+        const retryForName = typeof name === 'symbol' ? name.toString() : name;
+        const msgPrefix = `Failed for '${retryForName ?? fn.name}' for ${options.maxAttempts} times.`;
+        maxAttemptsErrorInstance.message = maxAttemptsErrorInstance.message
+          ? `${msgPrefix} Original Error: ${maxAttemptsErrorInstance.message}`
+          : msgPrefix;
 
         throw maxAttemptsErrorInstance;
-      }
-      if (!canRetry(e)) {
-        throw e;
       }
       if (backOff) {
         await sleep(applyBackoffStrategy(backOff));
@@ -114,7 +120,7 @@ export function Retryable(options: RetryOptions): RetryableDecorator {
           );
         }
       }
-      return retryAsync.apply(this, [fn, args, maxAttempts, backOff]);
+      return retryAsync.apply(this, [fn, args, maxAttempts, backOff, name]);
     }
   }
 
@@ -127,21 +133,7 @@ export function Retryable(options: RetryOptions): RetryableDecorator {
     }
 
     return async function (this: any, ...args: any[]) {
-      try {
-        return await retryAsync.apply(this, [
-          originalFn,
-          args,
-          options.maxAttempts,
-          options.backOff,
-        ]);
-      } catch (e: any) {
-        if (e instanceof MaxAttemptsError) {
-          const retryForName = typeof name === 'symbol' ? name.toString() : name;
-          const msgPrefix = `Failed for '${retryForName ?? originalFn.name}' for ${options.maxAttempts} times.`;
-          e.message = e.message ? `${msgPrefix} Original Error: ${e.message}` : msgPrefix;
-        }
-        throw e;
-      }
+      return retryAsync.apply(this, [originalFn, args, options.maxAttempts, options.backOff, name]);
     };
   }
 

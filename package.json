@@ -1,6 +1,6 @@
 {
   "name": "typescript-retry-decorator",
-  "version": "2.6.0",
+  "version": "2.6.1",
   "description": "A simple retry decorator for typescript with no dependency.",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
