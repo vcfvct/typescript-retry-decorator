@@ -235,25 +235,29 @@ describe('Retry Test', () => {
   ])('preserves a non-retryable %s error on every attempt', async (_, retryOptions) => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
-    for (const failAt of [0, 1, 2]) {
-      const nonRetryableError = new Error('non-retryable');
-      let attempt = 0;
-      const fn = vi.fn(async () => {
-        if (attempt++ === failAt) {
-          throw nonRetryableError;
-        }
-        throw new CustomError('retryable');
-      });
-      const wrapped = Retryable(retryOptions)(fn, {
-        kind: 'method',
-        name: 'test',
-      }) as (...args: any[]) => Promise<any>;
+    try {
+      for (const failAt of [0, 1, 2]) {
+        const nonRetryableError = new Error('non-retryable');
+        let attempt = 0;
+        const fn = vi.fn(async () => {
+          if (attempt++ === failAt) {
+            throw nonRetryableError;
+          }
+          throw new CustomError('retryable');
+        });
+        const wrapped = Retryable(retryOptions)(fn, {
+          kind: 'method',
+          name: 'test',
+        }) as (...args: any[]) => Promise<any>;
 
-      await expect(wrapped()).rejects.toBe(nonRetryableError);
-      expect(fn).toHaveBeenCalledTimes(failAt + 1);
+        await expect(wrapped()).rejects.toBe(nonRetryableError);
+        expect(fn).toHaveBeenCalledTimes(failAt + 1);
+      }
+
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
+    } finally {
+      consoleErrorSpy.mockRestore();
     }
-
-    expect(consoleErrorSpy).not.toHaveBeenCalled();
   });
 
   test('preserves a non-retryable error when maxAttempts is zero', async () => {
